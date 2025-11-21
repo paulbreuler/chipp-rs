@@ -1,6 +1,6 @@
 # Chipp API Research Summary
 
-**Research Date**: 2025-11-20  
+**Research Date**: 2025-11-20
 **Goal**: Document existing Chipp API integration in CEC codebase
 
 ---
@@ -156,13 +156,13 @@ pub struct ChippClient {
 
 impl ChippClient {
     pub fn new(config: ChippConfig) -> Self;
-    
+
     pub async fn chat(
         &self,
         session: &mut ChippSession,
         messages: &[ChippMessage],
     ) -> Result<String, ChippClientError>;
-    
+
     pub async fn chat_stream(
         &self,
         session: &mut ChippSession,
