@@ -22,14 +22,26 @@ Thank you for your interest in contributing to chipp-rs! This document provides 
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
   ```
 
-- **Pre-commit**: Install via pip or your package manager
+- **Just** (optional but recommended): Command runner for common tasks
+  ```bash
+  # Using Homebrew (macOS)
+  brew install just
+
+  # Using cargo
+  cargo install just
+
+  # Using apt (Ubuntu/Debian)
+  sudo apt install just
+  ```
+
+- **Pre-commit** (optional): Git hooks for automatic quality checks
   ```bash
   # Using pip
   pip install pre-commit
-  
+
   # Using Homebrew (macOS)
   brew install pre-commit
-  
+
   # Using apt (Ubuntu/Debian)
   sudo apt install pre-commit
   ```
@@ -41,11 +53,32 @@ Thank you for your interest in contributing to chipp-rs! This document provides 
 git clone https://github.com/paulbreuler/chipp-rs.git
 cd chipp-rs
 
-# Install pre-commit hooks
+# Install pre-commit hooks (optional)
 pre-commit install
 
 # Verify installation
 pre-commit --version
+```
+
+### Quick Start with Just
+
+If you have `just` installed, you can run common tasks easily:
+
+```bash
+# Run all quality checks (fmt, clippy, tests, docs)
+just quality
+
+# Format code
+just fmt
+
+# Run tests
+just test
+
+# Build docs and open in browser
+just docs-open
+
+# See all available commands
+just --list
 ```
 
 ---
@@ -124,6 +157,21 @@ rustup component add rustfmt clippy
 ---
 
 ## Code Quality Standards
+
+### Quick Check: Run All Quality Checks
+
+The easiest way to verify your code meets all standards:
+
+```bash
+# Using just (recommended)
+just quality
+
+# Or manually
+cargo fmt --all -- --check
+cargo clippy --all-targets --all-features -- -D warnings
+cargo test --lib
+cargo doc --no-deps --all-features
+```
 
 ### Formatting
 
