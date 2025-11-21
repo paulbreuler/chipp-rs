@@ -1,0 +1,51 @@
+[package]
+name = "chipp"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.70"
+authors = ["Paul Breuler <paul@alder.dev>"]
+license = "MIT OR Apache-2.0"
+description = "Rust client for the Chipp.ai API - OpenAI-compatible chat completions with streaming support"
+repository = "https://github.com/paulbreuler/chipp-rs"
+documentation = "https://docs.rs/chipp"
+homepage = "https://chipp.ai"
+keywords = ["chipp", "ai", "llm", "chat", "api"]
+categories = ["api-bindings", "asynchronous", "web-programming::http-client"]
+readme = "README.md"
+
+[dependencies]
+tokio = { version = "1.42", features = ["rt", "macros"] }
+tokio-stream = "0.1"
+reqwest = { version = "0.12", features = ["json", "stream"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+uuid = { version = "1.11", features = ["v4"] }
+tracing = "0.1"
+futures = "0.3"
+pin-project-lite = "0.2"
+
+[dev-dependencies]
+tokio = { version = "1.42", features = ["full", "test-util"] }
+tokio-test = "0.4"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[features]
+default = []
+integration-tests = []
+
+[[example]]
+name = "simple"
+required-features = []
+
+[[example]]
+name = "streaming"
+required-features = []
+
+[[example]]
+name = "session"
+required-features = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
