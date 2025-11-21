@@ -256,6 +256,13 @@ at your option.
 
 ### Contribution
 
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
+
+- Setting up pre-commit hooks
+- Code quality standards
+- Testing requirements
+- Pull request process
+
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
 
 ## Acknowledgments
