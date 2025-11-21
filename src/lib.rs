@@ -1,6 +1,6 @@
 //! Production-ready Chipp API client
 //!
-//! Provides async HTTP client for interacting with the Chipp API (https://chipp.ai).
+//! Provides async HTTP client for interacting with the Chipp API (<https://chipp.ai>).
 //! Supports both non-streaming and streaming (SSE) responses with automatic retry logic.
 //!
 //! # Features
@@ -14,7 +14,7 @@
 //!
 //! # API Reference
 //!
-//! See: https://chipp.ai/docs/api/reference
+//! See: <https://chipp.ai/docs/api/reference>
 //!
 //! # Non-Streaming Example
 //!
@@ -138,7 +138,7 @@ pub struct ChippConfig {
     /// Chipp API key (from Share → API tab in Chipp dashboard)
     pub api_key: String,
 
-    /// Base URL for Chipp API (default: "https://app.chipp.ai/api/v1")
+    /// Base URL for Chipp API (default: `https://app.chipp.ai/api/v1`)
     pub base_url: String,
 
     /// Chipp appNameId (e.g., "myapp-123" from your Chipp dashboard)
