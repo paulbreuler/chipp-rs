@@ -2,7 +2,7 @@
 name = "chipp"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.70"
+rust-version = "1.83"
 authors = ["Paul Breuler <paul@alder.dev>"]
 license = "MIT OR Apache-2.0"
 description = "Rust client for the Chipp.ai API - OpenAI-compatible chat completions with streaming support"
