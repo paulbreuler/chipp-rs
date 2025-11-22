@@ -34,7 +34,7 @@ Thank you for your interest in contributing to chipp-rs! This document provides 
   sudo apt install just
   ```
 
-- **Pre-commit** (optional): Git hooks for automatic quality checks
+- **Pre-commit** (required): Git hooks for automatic quality checks
   ```bash
   # Using pip
   pip install pre-commit

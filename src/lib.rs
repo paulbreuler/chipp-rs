@@ -376,17 +376,10 @@ impl ChippClient {
         loop {
             attempt += 1;
 
-            tracing::debug!(
-                attempt = attempt,
-                max_attempts = max_attempts,
-                "Sending Chipp API request"
-            );
-
             let result = self.chat_attempt(session, messages, &correlation_id).await;
 
             match result {
                 Ok(content) => {
-                    tracing::debug!("Received Chipp API response");
                     return Ok(content);
                 }
                 Err(e) if attempt >= max_attempts => {
