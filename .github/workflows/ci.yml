@@ -118,16 +118,6 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
 
-      - name: Generate coverage
-        run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: lcov.info
-          fail_ci_if_error: false  # Don't fail if Codecov upload fails
-          token: ${{ secrets.CODECOV_TOKEN }}  # Optional for public repos, required for private repos
-
       - name: Check coverage threshold
         run: |
           # Extract coverage percentage from lcov.info
