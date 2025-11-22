@@ -85,6 +85,8 @@
 //! # }
 //! ```
 
+use backoff::backoff::Backoff;
+use backoff::ExponentialBackoffBuilder;
 use futures::Stream;
 use serde::{Deserialize, Serialize};
 use std::pin::Pin;
@@ -131,6 +133,8 @@ pub enum ChippClientError {
 ///     model: "myapp-123".to_string(),
 ///     timeout: Duration::from_secs(30),
 ///     max_retries: 3,
+///     initial_retry_delay: Duration::from_millis(100),
+///     max_retry_delay: Duration::from_secs(10),
 /// };
 /// ```
 #[derive(Debug, Clone)]
@@ -149,6 +153,12 @@ pub struct ChippConfig {
 
     /// Maximum number of retry attempts for transient failures (default: 3)
     pub max_retries: usize,
+
+    /// Initial delay before first retry (default: 100ms)
+    pub initial_retry_delay: Duration,
+
+    /// Maximum delay between retries (default: 10 seconds)
+    pub max_retry_delay: Duration,
 }
 
 impl Default for ChippConfig {
@@ -159,6 +169,8 @@ impl Default for ChippConfig {
             model: String::new(),
             timeout: Duration::from_secs(30),
             max_retries: 3,
+            initial_retry_delay: Duration::from_millis(100),
+            max_retry_delay: Duration::from_secs(10),
         }
     }
 }
@@ -275,6 +287,34 @@ impl ChippClient {
         Self { http, config }
     }
 
+    /// Determine if an error is retryable
+    fn is_retryable_error(error: &ChippClientError) -> bool {
+        match error {
+            // Retry on HTTP errors (network failures, timeouts, DNS errors)
+            ChippClientError::HttpError(e) => {
+                // Retry on connection errors, timeouts, etc.
+                e.is_timeout() || e.is_connect() || e.is_request()
+            }
+            // Retry on 5xx server errors and 429 rate limiting
+            ChippClientError::ApiError { status, .. } => *status >= 500 || *status == 429,
+            // Don't retry on invalid responses or stream errors
+            ChippClientError::InvalidResponse(_) | ChippClientError::StreamError(_) => false,
+            // Don't retry if we've already exceeded max retries
+            ChippClientError::MaxRetriesExceeded(_) => false,
+        }
+    }
+
+    /// Create a backoff strategy for retries
+    fn create_backoff(&self) -> backoff::ExponentialBackoff {
+        ExponentialBackoffBuilder::new()
+            .with_initial_interval(self.config.initial_retry_delay)
+            .with_max_interval(self.config.max_retry_delay)
+            .with_max_elapsed_time(None) // We'll handle max retries manually
+            .with_multiplier(2.0) // Double the delay each time
+            .with_randomization_factor(0.3) // Add 30% jitter to prevent thundering herd
+            .build()
+    }
+
     /// Send a chat completion request (non-streaming)
     ///
     /// # Arguments
@@ -323,6 +363,65 @@ impl ChippClient {
         let correlation_id = Uuid::new_v4().to_string();
         tracing::Span::current().record("correlation_id", &correlation_id);
 
+        let mut backoff = self.create_backoff();
+        let mut attempt = 0;
+        let max_attempts = self.config.max_retries + 1; // +1 for initial attempt
+
+        loop {
+            attempt += 1;
+
+            tracing::debug!(
+                attempt = attempt,
+                max_attempts = max_attempts,
+                "Sending Chipp API request"
+            );
+
+            let result = self.chat_attempt(session, messages, &correlation_id).await;
+
+            match result {
+                Ok(content) => {
+                    tracing::debug!("Received Chipp API response");
+                    return Ok(content);
+                }
+                Err(e) if attempt >= max_attempts => {
+                    tracing::warn!(
+                        attempt = attempt,
+                        error = %e,
+                        "Max retry attempts exceeded"
+                    );
+                    return Err(ChippClientError::MaxRetriesExceeded(
+                        self.config.max_retries,
+                    ));
+                }
+                Err(e) if Self::is_retryable_error(&e) => {
+                    if let Some(delay) = backoff.next_backoff() {
+                        tracing::warn!(
+                            attempt = attempt,
+                            error = %e,
+                            delay_ms = delay.as_millis(),
+                            "Request failed, retrying after delay"
+                        );
+                        tokio::time::sleep(delay).await;
+                    } else {
+                        // Backoff exhausted (shouldn't happen with our config)
+                        return Err(e);
+                    }
+                }
+                Err(e) => {
+                    tracing::error!(error = %e, "Non-retryable error occurred");
+                    return Err(e);
+                }
+            }
+        }
+    }
+
+    /// Internal method to attempt a single chat request (without retry logic)
+    async fn chat_attempt(
+        &self,
+        session: &mut ChippSession,
+        messages: &[ChippMessage],
+        correlation_id: &str,
+    ) -> Result<String, ChippClientError> {
         let request_body = ChatCompletionRequest {
             model: self.config.model.clone(),
             messages: messages.to_vec(),
@@ -332,14 +431,12 @@ impl ChippClient {
 
         let url = format!("{}/chat/completions", self.config.base_url);
 
-        tracing::debug!("Sending Chipp API request");
-
         let response = self
             .http
             .post(&url)
             .header("Authorization", format!("Bearer {}", self.config.api_key))
             .header("Content-Type", "application/json")
-            .header("X-Correlation-ID", &correlation_id)
+            .header("X-Correlation-ID", correlation_id)
             .json(&request_body)
             .send()
             .await?;
@@ -368,8 +465,6 @@ impl ChippClient {
             .message
             .content
             .clone();
-
-        tracing::debug!("Received Chipp API response");
 
         Ok(content)
     }
@@ -546,5 +641,99 @@ mod tests {
         };
         let json = serde_json::to_string(&msg).unwrap();
         assert!(json.contains("\"role\":\"user\""));
+    }
+
+    #[tokio::test]
+    async fn test_is_retryable_error_http_timeout() {
+        // Create a timeout error by trying to connect to a non-existent server
+        let error = ChippClientError::HttpError(
+            reqwest::Client::new()
+                .get("http://localhost:1")
+                .timeout(std::time::Duration::from_millis(1))
+                .send()
+                .await
+                .unwrap_err(),
+        );
+        assert!(ChippClient::is_retryable_error(&error));
+    }
+
+    #[test]
+    fn test_is_retryable_error_5xx() {
+        let error = ChippClientError::ApiError {
+            status: 500,
+            message: "Internal Server Error".to_string(),
+        };
+        assert!(ChippClient::is_retryable_error(&error));
+
+        let error = ChippClientError::ApiError {
+            status: 503,
+            message: "Service Unavailable".to_string(),
+        };
+        assert!(ChippClient::is_retryable_error(&error));
+    }
+
+    #[test]
+    fn test_is_retryable_error_429() {
+        let error = ChippClientError::ApiError {
+            status: 429,
+            message: "Too Many Requests".to_string(),
+        };
+        assert!(ChippClient::is_retryable_error(&error));
+    }
+
+    #[test]
+    fn test_is_not_retryable_error_4xx() {
+        let error = ChippClientError::ApiError {
+            status: 400,
+            message: "Bad Request".to_string(),
+        };
+        assert!(!ChippClient::is_retryable_error(&error));
+
+        let error = ChippClientError::ApiError {
+            status: 401,
+            message: "Unauthorized".to_string(),
+        };
+        assert!(!ChippClient::is_retryable_error(&error));
+
+        let error = ChippClientError::ApiError {
+            status: 404,
+            message: "Not Found".to_string(),
+        };
+        assert!(!ChippClient::is_retryable_error(&error));
+    }
+
+    #[test]
+    fn test_is_not_retryable_error_invalid_response() {
+        let error = ChippClientError::InvalidResponse("Bad JSON".to_string());
+        assert!(!ChippClient::is_retryable_error(&error));
+    }
+
+    #[test]
+    fn test_is_not_retryable_error_max_retries_exceeded() {
+        let error = ChippClientError::MaxRetriesExceeded(3);
+        assert!(!ChippClient::is_retryable_error(&error));
+    }
+
+    #[test]
+    fn test_backoff_configuration() {
+        let config = ChippConfig {
+            initial_retry_delay: Duration::from_millis(100),
+            max_retry_delay: Duration::from_secs(10),
+            ..Default::default()
+        };
+        let client = ChippClient::new(config);
+        let _backoff = client.create_backoff();
+
+        // Verify backoff is created with correct configuration
+        // Note: We can't easily test the exact values without making the backoff public,
+        // but we can verify it compiles and creates successfully
+    }
+
+    #[test]
+    fn test_config_default_retry_values() {
+        let config = ChippConfig::default();
+        assert_eq!(config.max_retries, 3);
+        assert_eq!(config.initial_retry_delay, Duration::from_millis(100));
+        assert_eq!(config.max_retry_delay, Duration::from_secs(10));
     }
 }

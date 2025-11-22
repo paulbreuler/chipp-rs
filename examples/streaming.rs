@@ -9,7 +9,6 @@
 
 use chipp::{ChippClient, ChippConfig, ChippMessage, ChippSession, MessageRole};
 use futures::StreamExt;
-use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -25,10 +24,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create client configuration
     let config = ChippConfig {
         api_key,
-        base_url: "https://app.chipp.ai/api/v1".to_string(),
         model: app_name_id,
-        timeout: Duration::from_secs(30),
-        max_retries: 3,
+        ..Default::default()
     };
 
     // Create client and session
