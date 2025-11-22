@@ -298,9 +298,63 @@ We follow [Semantic Versioning](https://semver.org/):
 - **MINOR** (0.1.0): New features, backward compatible
 - **PATCH** (0.0.1): Bug fixes, backward compatible
 
-### CHANGELOG.md
+### Automated CHANGELOG Generation
 
-All changes must be documented in `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com/) format:
+We use [git-cliff](https://git-cliff.org/) to automatically generate `CHANGELOG.md` from conventional commit messages.
+
+**Why automated?**
+- Ensures consistency across releases
+- Reduces manual work and human error
+- Automatically categorizes changes by type (feat, fix, docs, etc.)
+- Generates links to commits and PRs
+- Follows [Keep a Changelog](https://keepachangelog.com/) format
+
+**How it works:**
+1. Write conventional commit messages (see [Conventional Commits](#conventional-commits) above)
+2. When ready to release, run `git-cliff` to generate/update CHANGELOG.md
+3. The tool parses all commits since the last release
+4. Categorizes them by type (Features, Bug Fixes, Documentation, etc.)
+5. Generates a formatted CHANGELOG.md entry
+
+**Installation:**
+
+```bash
+# Using cargo
+cargo install git-cliff
+
+# Using Homebrew (macOS)
+brew install git-cliff
+
+# Using apt (Ubuntu/Debian)
+sudo apt install git-cliff
+```
+
+**Usage:**
+
+```bash
+# Generate changelog for unreleased changes
+git-cliff --unreleased --tag v0.2.0 --prepend CHANGELOG.md
+
+# Generate full changelog
+git-cliff --output CHANGELOG.md
+
+# Preview without writing
+git-cliff --unreleased
+```
+
+**Configuration:**
+
+The repository includes a `cliff.toml` configuration file that defines:
+- Commit parsing rules
+- Changelog template
+- Section ordering
+- Commit filtering
+
+See [git-cliff documentation](https://git-cliff.org/docs) for customization options.
+
+**CHANGELOG Format:**
+
+All changes are documented in `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com/) format:
 
 ```markdown
 ## [Unreleased]
@@ -328,12 +382,31 @@ All changes must be documented in `CHANGELOG.md` following [Keep a Changelog](ht
 
 Before releasing a new version:
 
-- [ ] All tests pass
-- [ ] CHANGELOG.md updated
+- [ ] All tests pass (`just quality`)
 - [ ] Version bumped in `Cargo.toml`
+- [ ] CHANGELOG.md generated with `git-cliff`
+- [ ] CHANGELOG.md reviewed for accuracy
 - [ ] Documentation reviewed
 - [ ] Examples tested
 - [ ] `cargo publish --dry-run` succeeds
+
+**Release Steps:**
+
+1. **Update version** in `Cargo.toml`
+2. **Generate CHANGELOG**:
+   ```bash
+   git-cliff --unreleased --tag v0.2.0 --prepend CHANGELOG.md
+   ```
+3. **Review CHANGELOG.md** - ensure it looks correct
+4. **Run quality checks**: `just quality`
+5. **Commit changes**:
+   ```bash
+   git add Cargo.toml CHANGELOG.md
+   git commit -m "chore: release v0.2.0"
+   ```
+6. **Tag the release**: `git tag v0.2.0`
+7. **Push**: `git push && git push --tags`
+8. **Publish**: `cargo publish`
 
 See `.augment/rules/10-library-publishing.md` for detailed publishing standards.
 
