@@ -234,12 +234,31 @@ We enforce a minimum of **80% line coverage** for all code changes.
 **Check coverage locally:**
 
 ```bash
-# Generate HTML coverage report
+# Generate HTML coverage report (shows uncovered lines)
 just coverage
 
-# Check if coverage meets 80% threshold
+# Check if coverage meets 80% threshold (shows uncovered lines)
 just coverage-check
+
+# View detailed coverage report in browser
+open target/llvm-cov/html/index.html
 ```
+
+**Understanding coverage output:**
+
+The `--show-missing-lines` flag provides detailed information about uncovered code:
+
+```
+TOTAL    297    144    51.52%    29    11    62.07%    246    114    53.66%    0    0    -
+Uncovered Lines:
+/path/to/src/lib.rs: 217, 218, 219, 358, 359, 360, ...
+```
+
+This shows:
+- **Line coverage**: 53.66% (246 total lines, 114 uncovered)
+- **Region coverage**: 51.52% (297 regions, 144 uncovered)
+- **Function coverage**: 62.07% (29 functions, 11 uncovered)
+- **Uncovered lines**: Exact line numbers that need test coverage
 
 **Install cargo-llvm-cov:**
 

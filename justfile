@@ -56,7 +56,7 @@ test-integration:
     @echo "⚠️  Integration tests require CHIPP_API_KEY and CHIPP_APP_NAME_ID"
     cargo test --features integration-tests -- --ignored
 
-# Generate code coverage report
+# Generate code coverage report with detailed HTML output
 coverage:
     @echo "📊 Generating code coverage report..."
     @echo ""
@@ -64,25 +64,28 @@ coverage:
     @cargo install cargo-llvm-cov --quiet 2>/dev/null || true
     @echo ""
     @echo "Running tests with coverage..."
-    cargo llvm-cov --all-features --workspace --html
+    cargo llvm-cov --all-features --workspace --html --show-missing-lines
     @echo ""
     @echo "✅ Coverage report generated!"
     @echo "📂 Open target/llvm-cov/html/index.html in your browser"
     @echo ""
-    @echo "Coverage summary:"
-    cargo llvm-cov --all-features --workspace --summary-only
+    @echo "Coverage summary (showing uncovered lines):"
+    cargo llvm-cov --all-features --workspace --summary-only --show-missing-lines
 
-# Generate coverage and check 80% threshold
+# Generate coverage and check 80% threshold (shows uncovered lines)
 coverage-check:
-    @echo "📊 Checking code coverage threshold (80%)..."
-    @cargo install cargo-llvm-cov --quiet 2>/dev/null || true
-    @COVERAGE=$$(cargo llvm-cov --all-features --workspace --summary-only | grep -oP 'TOTAL.*\K\d+\.\d+(?=%)' || echo "0"); \
-    echo "Current coverage: $${COVERAGE}%"; \
-    if [ "$$(echo "$${COVERAGE} < 80.0" | bc -l)" -eq 1 ]; then \
-        echo "❌ Coverage $${COVERAGE}% is below the required 80% threshold"; \
-        exit 1; \
-    else \
-        echo "✅ Coverage $${COVERAGE}% meets the 80% threshold"; \
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📊 Checking code coverage threshold (80%)..."
+    cargo install cargo-llvm-cov --quiet 2>/dev/null || true
+    # Extract line coverage percentage from TOTAL row (column 10)
+    COVERAGE=$(cargo llvm-cov --all-features --workspace --summary-only --show-missing-lines | grep '^TOTAL' | awk '{print $10}' | sed 's/%//')
+    echo "Current coverage: ${COVERAGE}%"
+    if (( $(echo "${COVERAGE} < 80.0" | bc -l) )); then
+        echo "❌ Coverage ${COVERAGE}% is below the required 80% threshold"
+        exit 1
+    else
+        echo "✅ Coverage ${COVERAGE}% meets the 80% threshold"
     fi
 
 # Build documentation
