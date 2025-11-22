@@ -8,7 +8,6 @@
 
 use chipp::{ChippClient, ChippConfig, ChippMessage, ChippSession, MessageRole};
 use futures::StreamExt;
-use std::time::Duration;
 
 fn get_test_config() -> Option<ChippConfig> {
     let api_key = std::env::var("CHIPP_API_KEY").ok()?;
@@ -18,10 +17,8 @@ fn get_test_config() -> Option<ChippConfig> {
 
     Some(ChippConfig {
         api_key,
-        base_url: "https://app.chipp.ai/api/v1".to_string(),
         model,
-        timeout: Duration::from_secs(30),
-        max_retries: 3,
+        ..Default::default()
     })
 }
 

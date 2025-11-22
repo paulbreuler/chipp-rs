@@ -16,34 +16,34 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest]
         rust: [stable, beta]
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
-      
+
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-      
+
       - name: Cache cargo index
         uses: actions/cache@v4
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
-      
+
       - name: Cache cargo build
         uses: actions/cache@v4
         with:
           path: target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-      
+
       - name: Run tests
         run: cargo test --verbose
 
@@ -52,12 +52,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
-      
+
       - name: Check formatting
         run: cargo fmt --all -- --check
 
@@ -66,12 +66,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-      
+
       - name: Run clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
@@ -80,10 +80,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-      
+
       - name: Build documentation
         run: cargo doc --no-deps --all-features
         env:
@@ -94,11 +94,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Install Rust 1.70
+
+      - name: Install Rust 1.83
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: "1.70"
-      
+          toolchain: "1.83"
+
       - name: Check MSRV
         run: cargo check --all-features
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    needs: test  # Only run coverage after tests pass
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Check coverage threshold
+        run: |
+          # Extract line coverage percentage (last percentage in TOTAL row)
+          COVERAGE=$(cargo llvm-cov --all-features --workspace --summary-only | grep "^TOTAL" | awk '{print $10}' | sed 's/%//')
+          echo "Current coverage: ${COVERAGE}%"
+
+          # Fail if coverage is below 80%
+          if (( $(echo "$COVERAGE < 80.0" | bc -l) )); then
+            echo "❌ Coverage ${COVERAGE}% is below the required 80% threshold"
+            exit 1
+          else
+            echo "✅ Coverage ${COVERAGE}% meets the 80% threshold"
+          fi

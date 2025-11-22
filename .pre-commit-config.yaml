@@ -1,0 +1,60 @@
+# Pre-commit hooks for chipp-rs
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+
+repos:
+  # Rust-specific hooks
+  - repo: https://github.com/doublify/pre-commit-rust
+    rev: v1.0
+    hooks:
+      # Format code with rustfmt
+      - id: fmt
+        name: cargo fmt
+        args: ['--all', '--', '--check']
+      
+      # Lint with clippy (enforce zero warnings)
+      - id: clippy
+        name: cargo clippy
+        args: ['--all-targets', '--all-features', '--', '-D', 'warnings']
+
+  # General file quality hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      # Prevent committing large files
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      
+      # Check for files that would conflict in case-insensitive filesystems
+      - id: check-case-conflict
+      
+      # Check for merge conflicts
+      - id: check-merge-conflict
+      
+      # Check YAML files for syntax errors
+      - id: check-yaml
+        args: ['--unsafe']  # Allow custom YAML tags
+      
+      # Check TOML files for syntax errors
+      - id: check-toml
+      
+      # Ensure files end with a newline
+      - id: end-of-file-fixer
+        exclude: '\.lock$'
+      
+      # Remove trailing whitespace
+      - id: trailing-whitespace
+        args: ['--markdown-linebreak-ext=md']
+      
+      # Prevent committing to main/master
+      - id: no-commit-to-branch
+        args: ['--branch', 'main', '--branch', 'master']
+
+# Configuration
+default_language_version:
+  python: python3
+
+# Run hooks on all files during manual runs
+files: ''
+exclude: '^(target/|\.git/)'
+
