@@ -135,6 +135,9 @@ cargo run --example streaming
 
 # Session continuity example
 cargo run --example session
+
+# Error handling example (demonstrates retry logic, fallback strategies, etc.)
+cargo run --example error_handling
 ```
 
 ## Configuration
