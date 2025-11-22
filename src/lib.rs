@@ -29,6 +29,8 @@
 //!     model: "myapp-123".to_string(),
 //!     timeout: Duration::from_secs(30),
 //!     max_retries: 3,
+//!     initial_retry_delay: Duration::from_millis(100),
+//!     max_retry_delay: Duration::from_secs(10),
 //! };
 //!
 //! let client = ChippClient::new(config);
@@ -61,6 +63,8 @@
 //!     model: "myapp-123".to_string(),
 //!     timeout: Duration::from_secs(30),
 //!     max_retries: 3,
+//!     initial_retry_delay: Duration::from_millis(100),
+//!     max_retry_delay: Duration::from_secs(10),
 //! };
 //!
 //! let client = ChippClient::new(config);
@@ -273,6 +277,8 @@ impl ChippClient {
     ///     model: "myapp-123".to_string(),
     ///     timeout: Duration::from_secs(30),
     ///     max_retries: 3,
+    ///     initial_retry_delay: Duration::from_millis(100),
+    ///     max_retry_delay: Duration::from_secs(10),
     /// };
     ///
     /// let client = ChippClient::new(config);
