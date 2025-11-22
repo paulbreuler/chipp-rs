@@ -607,6 +607,12 @@ pub struct ChippStream {
     inner: Pin<Box<dyn Stream<Item = Result<String, ChippClientError>> + Send>>,
 }
 
+impl std::fmt::Debug for ChippStream {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ChippStream").finish_non_exhaustive()
+    }
+}
+
 impl Stream for ChippStream {
     type Item = Result<String, ChippClientError>;
 
