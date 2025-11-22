@@ -210,6 +210,7 @@ cargo doc --no-deps
 - **Unit tests** for all public APIs
 - **Integration tests** for real API calls (gated behind `integration-tests` feature)
 - **Doc tests** for all examples in documentation
+- **Code coverage**: Minimum 80% line coverage required
 
 Run tests:
 
@@ -225,6 +226,47 @@ cargo test --features integration-tests -- --ignored
 # Doc tests
 cargo test --doc
 ```
+
+### Code Coverage
+
+We enforce a minimum of **80% line coverage** for all code changes.
+
+**Check coverage locally:**
+
+```bash
+# Generate HTML coverage report
+just coverage
+
+# Check if coverage meets 80% threshold
+just coverage-check
+```
+
+**Install cargo-llvm-cov:**
+
+```bash
+cargo install cargo-llvm-cov
+```
+
+**Coverage requirements:**
+
+- All new features must include tests
+- Bug fixes should include regression tests
+- Coverage must not decrease with new PRs
+- Integration tests are excluded from coverage (require API keys)
+
+**CI enforcement:**
+
+- GitHub Actions automatically checks coverage on all PRs
+- PRs that drop coverage below 80% will fail CI
+- Coverage reports are uploaded to Codecov for tracking
+
+**Viewing coverage:**
+
+After running `just coverage`, open `target/llvm-cov/html/index.html` in your browser to see:
+- Line-by-line coverage
+- Function coverage
+- Branch coverage
+- Uncovered code highlighted in red
 
 ---
 

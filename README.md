@@ -4,6 +4,7 @@
 [![Documentation](https://docs.rs/chipp/badge.svg)](https://docs.rs/chipp)
 [![License](https://img.shields.io/crates/l/chipp.svg)](https://github.com/paulbreuler/chipp-rs#license)
 [![Build Status](https://github.com/paulbreuler/chipp-rs/workflows/CI/badge.svg)](https://github.com/paulbreuler/chipp-rs/actions)
+[![codecov](https://codecov.io/gh/paulbreuler/chipp-rs/branch/main/graph/badge.svg)](https://codecov.io/gh/paulbreuler/chipp-rs)
 
 Rust client for the [Chipp.ai](https://chipp.ai) API - OpenAI-compatible chat completions with streaming support.
 
