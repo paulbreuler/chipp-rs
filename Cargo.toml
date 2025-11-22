@@ -14,13 +14,13 @@ categories = ["api-bindings", "asynchronous", "web-programming::http-client"]
 readme = "README.md"
 
 [dependencies]
-tokio = { version = "1.42", features = ["rt", "macros"] }
+tokio = { version = "1.48", features = ["rt", "macros"] }
 tokio-stream = "0.1"
 reqwest = { version = "0.12", features = ["json", "stream"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "2.0"
-uuid = { version = "1.11", features = ["v4"] }
+uuid = { version = "1.18", features = ["v4"] }
 tracing = "0.1"
 futures = "0.3"
 pin-project-lite = "0.2"
@@ -28,7 +28,7 @@ backoff = { version = "0.4.0", features = ["tokio"] }
 
 [dev-dependencies]
 serde_json = "1.0"
-tokio = { version = "1.42", features = ["full", "test-util"] }
+tokio = { version = "1.48", features = ["full", "test-util"] }
 tokio-test = "0.4"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 wiremock = "0.6.5"
