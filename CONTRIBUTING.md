@@ -258,6 +258,17 @@ cargo install cargo-llvm-cov
 
 - GitHub Actions automatically checks coverage on all PRs
 - PRs that drop coverage below 80% will fail CI
+
+**Codecov Integration:**
+
+For public repositories, Codecov works without a token. The `CODECOV_TOKEN` secret is only required for:
+- Private repositories
+- Dependabot PRs (to grant Dependabot access to the token)
+
+If you need to set up the token:
+1. Sign up at [codecov.io](https://codecov.io)
+2. Link the repository
+3. Add `CODECOV_TOKEN` as a repository secret in GitHub Settings → Secrets and variables → Actions
 - Coverage reports are uploaded to Codecov for tracking
 
 **Viewing coverage:**

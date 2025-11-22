@@ -125,8 +125,8 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           files: lcov.info
-          fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false  # Don't fail if Codecov upload fails
+          token: ${{ secrets.CODECOV_TOKEN }}  # Optional for public repos, required for private repos
 
       - name: Check coverage threshold
         run: |
