@@ -140,16 +140,6 @@ chipp-rs includes custom commands in `.augment/commands/` for common workflows:
 /cleanup-temporary-analyses
 ```
 
-## Migration from Alder
-
-This configuration was adapted from the Alder project's `.augment/` structure, tailored for Rust SDK development. Key adaptations:
-
-- Replaced application patterns with library design patterns
-- Focused on API design, error handling, async patterns, and streaming
-- Added publishing standards for crates.io
-- Maintained core principles: extreme ownership, ruthless simplicity, clean architecture
-- Adapted commands for SDK workflows (API design, testing, documentation, publishing)
-
 ## References
 
 - [Augment Rules Documentation](https://docs.augmentcode.com/setup-augment/guidelines)
