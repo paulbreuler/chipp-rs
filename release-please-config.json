@@ -3,8 +3,6 @@
   "packages": {
     ".": {
       "release-type": "rust",
-      "prerelease": true,
-      "prerelease-type": "alpha",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "changelog-sections": [
@@ -17,8 +15,7 @@
         { "type": "test", "section": "Miscellaneous", "hidden": true },
         { "type": "refactor", "section": "Miscellaneous", "hidden": true },
         { "type": "style", "section": "Miscellaneous", "hidden": true }
-      ],
-      "extra-files": []
+      ]
     }
   }
 }
