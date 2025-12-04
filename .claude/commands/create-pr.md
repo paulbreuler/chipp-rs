@@ -1,7 +1,6 @@
 ---
 description: Create comprehensive pull requests with GitHub issue linking, conventional commit titles, and automated quality validation for chipp-rs SDK development
 argument-hint: [issue-number] [--draft] [--dry-run]
-model: sonnet
 allowed-tools: [github-api, launch-process, view, codebase-retrieval]
 ---
 

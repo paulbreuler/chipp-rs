@@ -55,6 +55,29 @@ Before publishing to crates.io:
 - Does the documentation explain WHY, not just WHAT?
 - Will users understand error messages?
 
+## Git Workflow
+
+**NEVER commit directly to `main`**. Always use feature branches:
+
+```bash
+# 1. Create branch from main
+git checkout main && git pull
+git checkout -b <type>/issue-<number>-<description>
+
+# 2. Make changes and commit to the branch
+git add <files>
+git commit -m "<type>: <description>"
+
+# 3. Push branch and create PR
+git push -u origin <branch-name>
+# Use create-pr command or GitHub API
+```
+
+**Branch naming**: `<type>/issue-<number>-<short-description>`
+- `fix/issue-3-client-new-returns-result`
+- `feat/issue-10-add-retry-logic`
+- `chore/issue-4-tdd-enforcement-rule`
+
 ## Release Process
 
 1. **Conventional Commits**: Use `feat:`, `fix:`, `docs:`, `chore:`, etc.
