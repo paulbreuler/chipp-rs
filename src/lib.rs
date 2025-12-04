@@ -33,7 +33,7 @@
 //!     max_retry_delay: Duration::from_secs(10),
 //! };
 //!
-//! let client = ChippClient::new(config);
+//! let client = ChippClient::new(config)?;
 //! let mut session = ChippSession::new();
 //!
 //! let messages = vec![
@@ -67,7 +67,7 @@
 //!     max_retry_delay: Duration::from_secs(10),
 //! };
 //!
-//! let client = ChippClient::new(config);
+//! let client = ChippClient::new(config)?;
 //! let mut session = ChippSession::new();
 //!
 //! let messages = vec![
@@ -265,6 +265,11 @@ impl ChippClient {
     ///
     /// * `config` - Client configuration including API key, model, timeout, and retry settings
     ///
+    /// # Errors
+    ///
+    /// Returns `ChippClientError::HttpError` if the underlying HTTP client fails to build.
+    /// This is rare but can occur with invalid TLS configuration or system-level issues.
+    ///
     /// # Example
     ///
     /// ```
@@ -281,16 +286,13 @@ impl ChippClient {
     ///     max_retry_delay: Duration::from_secs(10),
     /// };
     ///
-    /// let client = ChippClient::new(config);
+    /// let client = ChippClient::new(config)?;
+    /// # Ok::<(), chipp::ChippClientError>(())
     /// ```
-    #[must_use]
-    pub fn new(config: ChippConfig) -> Self {
-        let http = reqwest::Client::builder()
-            .timeout(config.timeout)
-            .build()
-            .expect("Failed to build HTTP client");
+    pub fn new(config: ChippConfig) -> Result<Self, ChippClientError> {
+        let http = reqwest::Client::builder().timeout(config.timeout).build()?;
 
-        Self { http, config }
+        Ok(Self { http, config })
     }
 
     /// Determine if an error is retryable
@@ -346,7 +348,7 @@ impl ChippClient {
     /// # use std::time::Duration;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// # let config = ChippConfig::default();
-    /// # let client = ChippClient::new(config);
+    /// # let client = ChippClient::new(config)?;
     /// let mut session = ChippSession::new();
     /// let messages = vec![
     ///     ChippMessage {
@@ -497,7 +499,7 @@ impl ChippClient {
     /// # use std::time::Duration;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// # let config = ChippConfig::default();
-    /// # let client = ChippClient::new(config);
+    /// # let client = ChippClient::new(config)?;
     /// let mut session = ChippSession::new();
     /// let messages = vec![
     ///     ChippMessage {
@@ -726,7 +728,7 @@ mod tests {
             max_retry_delay: Duration::from_secs(10),
             ..Default::default()
         };
-        let client = ChippClient::new(config);
+        let client = ChippClient::new(config).expect("Failed to create client");
         let _backoff = client.create_backoff();
 
         // Verify backoff is created with correct configuration

@@ -26,7 +26,7 @@ fn get_test_config() -> Option<ChippConfig> {
 #[ignore] // Requires API key
 async fn test_chat_non_streaming() {
     let config = get_test_config().expect("CHIPP_API_KEY and CHIPP_APP_NAME_ID must be set");
-    let client = ChippClient::new(config);
+    let client = ChippClient::new(config).expect("Failed to create client");
     let mut session = ChippSession::new();
 
     let messages = vec![ChippMessage {
@@ -48,7 +48,7 @@ async fn test_chat_non_streaming() {
 #[ignore] // Requires API key
 async fn test_chat_session_continuity() {
     let config = get_test_config().expect("CHIPP_API_KEY and CHIPP_APP_NAME_ID must be set");
-    let client = ChippClient::new(config);
+    let client = ChippClient::new(config).expect("Failed to create client");
     let mut session = ChippSession::new();
 
     // First message: Ask to remember something
@@ -97,7 +97,7 @@ async fn test_chat_session_continuity() {
 #[ignore] // Requires API key
 async fn test_chat_streaming() {
     let config = get_test_config().expect("CHIPP_API_KEY and CHIPP_APP_NAME_ID must be set");
-    let client = ChippClient::new(config);
+    let client = ChippClient::new(config).expect("Failed to create client");
     let mut session = ChippSession::new();
 
     let messages = vec![ChippMessage {
