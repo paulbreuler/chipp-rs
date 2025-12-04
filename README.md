@@ -44,6 +44,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         model: "your-app-name-id".to_string(),
         timeout: Duration::from_secs(30),
         max_retries: 3,
+        initial_retry_delay: Duration::from_millis(100),
+        max_retry_delay: Duration::from_secs(10),
     };
 
     let client = ChippClient::new(config)?;
@@ -146,11 +148,13 @@ cargo run --example error_handling
 
 ```rust
 pub struct ChippConfig {
-    pub api_key: String,        // Your Chipp API key
-    pub base_url: String,       // Default: "https://app.chipp.ai/api/v1"
-    pub model: String,          // Your appNameId from Chipp dashboard
-    pub timeout: Duration,      // Request timeout (default: 30s)
-    pub max_retries: usize,     // Max retry attempts (default: 3)
+    pub api_key: String,              // Your Chipp API key
+    pub base_url: String,             // Default: "https://app.chipp.ai/api/v1"
+    pub model: String,                // Your appNameId from Chipp dashboard
+    pub timeout: Duration,            // Request timeout (default: 30s)
+    pub max_retries: usize,           // Max retry attempts (default: 3)
+    pub initial_retry_delay: Duration, // Initial backoff delay (default: 100ms)
+    pub max_retry_delay: Duration,    // Max backoff delay (default: 10s)
 }
 ```
 
@@ -270,14 +274,7 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
 
-## Acknowledgments
-
-- Built for the [Chipp.ai](https://chipp.ai) platform
-
 ## Links
 
 - [Chipp.ai](https://chipp.ai) - Official website
-- [Chipp API Documentation](https://chipp.ai/docs/api) - API docs
-- [crates.io](https://crates.io/crates/chipp) - Crate registry
-- [docs.rs](https://docs.rs/chipp) - Documentation
-- [GitHub](https://github.com/paulbreuler/chipp-rs) - Source code
+- [Chipp API Documentation](https://chipp.ai/docs/api) - API reference
