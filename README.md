@@ -1,9 +1,11 @@
 # chipp
 
 [![Crates.io](https://img.shields.io/crates/v/chipp.svg)](https://crates.io/crates/chipp)
-[![Documentation](https://docs.rs/chipp/badge.svg)](https://docs.rs/chipp)
+[![docs.rs](https://img.shields.io/docsrs/chipp)](https://docs.rs/chipp)
 [![License](https://img.shields.io/crates/l/chipp.svg)](https://github.com/paulbreuler/chipp-rs#license)
-[![Build Status](https://github.com/paulbreuler/chipp-rs/workflows/CI/badge.svg)](https://github.com/paulbreuler/chipp-rs/actions)
+[![CI](https://github.com/paulbreuler/chipp-rs/workflows/CI/badge.svg)](https://github.com/paulbreuler/chipp-rs/actions)
+[![MSRV](https://img.shields.io/badge/MSRV-1.83-blue)](https://github.com/paulbreuler/chipp-rs)
+[![Downloads](https://img.shields.io/crates/d/chipp.svg)](https://crates.io/crates/chipp)
 
 Rust client for the [Chipp.ai](https://chipp.ai) API - OpenAI-compatible chat completions with streaming support.
 
