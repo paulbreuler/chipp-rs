@@ -89,6 +89,28 @@ jobs:
         env:
           RUSTDOCFLAGS: -D warnings
 
+      - name: Validate docs.rs build
+        run: cargo doc --no-deps --all-features
+        env:
+          RUSTDOCFLAGS: --cfg docsrs -D warnings
+
+  semver:
+    name: Semver Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-semver-checks
+        uses: taiki-e/install-action@cargo-semver-checks
+
+      - name: Check semver compliance
+        run: cargo semver-checks check-release
+        # Skip if crate not yet published (no baseline to compare)
+        continue-on-error: true
+
   msrv:
     name: Minimum Supported Rust Version
     runs-on: ubuntu-latest
