@@ -44,7 +44,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         max_retries: 3,
     };
 
-    let client = ChippClient::new(config);
+    let client = ChippClient::new(config)?;
     let mut session = ChippSession::new();
 
     let messages = vec![ChippMessage {
@@ -66,7 +66,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```rust
 use chipp::{ChippClient, ChippConfig, ChippMessage, ChippSession, MessageRole};
 
-let client = ChippClient::new(config);
+let client = ChippClient::new(config)?;
 let mut session = ChippSession::new();
 
 let messages = vec![ChippMessage {
@@ -271,7 +271,6 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 ## Acknowledgments
 
 - Built for the [Chipp.ai](https://chipp.ai) platform
-- Originally developed as part of the [Chipp Edge Companion](https://github.com/paulbreuler/chipp-edge-companion) project
 
 ## Links
 
