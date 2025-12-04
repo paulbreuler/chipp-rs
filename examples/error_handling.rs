@@ -81,7 +81,7 @@ async fn handle_invalid_api_key() {
         ..Default::default()
     };
 
-    let client = ChippClient::new(config);
+    let client = ChippClient::new(config).expect("Failed to create client");
     let mut session = ChippSession::new();
 
     let messages = vec![ChippMessage {
@@ -122,7 +122,7 @@ async fn handle_timeout() {
         ..Default::default()
     };
 
-    let client = ChippClient::new(config);
+    let client = ChippClient::new(config).expect("Failed to create client");
     let mut session = ChippSession::new();
 
     let messages = vec![ChippMessage {
@@ -184,7 +184,7 @@ async fn handle_successful_request() {
         ..Default::default()
     };
 
-    let client = ChippClient::new(config);
+    let client = ChippClient::new(config).expect("Failed to create client");
     let mut session = ChippSession::new();
 
     let messages = vec![ChippMessage {
@@ -220,7 +220,7 @@ async fn handle_with_fallback() {
         ..Default::default()
     };
 
-    let client = ChippClient::new(config);
+    let client = ChippClient::new(config).expect("Failed to create client");
     let mut session = ChippSession::new();
 
     let messages = vec![ChippMessage {
@@ -255,7 +255,7 @@ async fn propagate_errors() -> Result<String, ChippClientError> {
         ..Default::default()
     };
 
-    let client = ChippClient::new(config);
+    let client = ChippClient::new(config)?;
     let mut session = ChippSession::new();
 
     let messages = vec![ChippMessage {

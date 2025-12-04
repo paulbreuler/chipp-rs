@@ -28,7 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Create client and session
-    let client = ChippClient::new(config);
+    let client = ChippClient::new(config)?;
     let mut session = ChippSession::new();
 
     // Send a message

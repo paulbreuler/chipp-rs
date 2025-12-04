@@ -10,7 +10,7 @@ use std::time::Duration;
 ///
 /// Arrange: Create valid ChippConfig using defaults
 /// Act: Call ChippClient::new()
-/// Assert: Client is created without panic
+/// Assert: Client is created and returns Ok
 #[test]
 fn test_new_with_valid_config_creates_client() {
     // Arrange
@@ -21,9 +21,13 @@ fn test_new_with_valid_config_creates_client() {
     };
 
     // Act
-    let _client = ChippClient::new(config);
+    let result = ChippClient::new(config);
 
-    // Assert - Client created successfully (no panic)
+    // Assert - Client created successfully
+    assert!(
+        result.is_ok(),
+        "ChippClient::new() should succeed with valid config"
+    );
 }
 
 /// Tests that ChippClient::new() works with default configuration
@@ -41,13 +45,13 @@ fn test_new_with_default_config() {
     };
 
     // Act
-    let _client = ChippClient::new(config);
+    let result = ChippClient::new(config);
 
     // Assert - Client created successfully with defaults
-    // Default timeout: 30s
-    // Default max_retries: 3
-    // Default initial_retry_delay: 100ms
-    // Default max_retry_delay: 10s
+    assert!(
+        result.is_ok(),
+        "ChippClient::new() should succeed with defaults"
+    );
 }
 
 /// Tests that ChippClient::new() accepts custom timeout values
@@ -66,9 +70,13 @@ fn test_new_with_custom_timeout() {
     };
 
     // Act
-    let _client = ChippClient::new(config);
+    let result = ChippClient::new(config);
 
     // Assert - Client created successfully
+    assert!(
+        result.is_ok(),
+        "ChippClient::new() should succeed with custom timeout"
+    );
 }
 
 /// Tests that ChippClient::new() accepts custom retry configuration
@@ -87,9 +95,13 @@ fn test_new_with_zero_retries() {
     };
 
     // Act
-    let _client = ChippClient::new(config);
+    let result = ChippClient::new(config);
 
     // Assert - Client created successfully
+    assert!(
+        result.is_ok(),
+        "ChippClient::new() should succeed with zero retries"
+    );
 }
 
 /// Tests that ChippSession::default() creates a new session with no ID
@@ -104,4 +116,25 @@ fn test_session_default_trait() {
 
     // Assert
     assert!(session.chat_session_id.is_none());
+}
+
+/// Tests that ChippClient::new() returns Result for proper error handling
+///
+/// Arrange: Create valid ChippConfig
+/// Act: Call ChippClient::new()
+/// Assert: Returns Ok with a valid client
+#[test]
+fn test_new_returns_result_ok() {
+    // Arrange
+    let config = ChippConfig {
+        api_key: "test-api-key".to_string(),
+        model: "test-model".to_string(),
+        ..Default::default()
+    };
+
+    // Act
+    let result = ChippClient::new(config);
+
+    // Assert - Should return Ok
+    assert!(result.is_ok(), "ChippClient::new() should return Ok");
 }

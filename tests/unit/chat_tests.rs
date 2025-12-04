@@ -24,7 +24,7 @@ async fn setup_test_client() -> (ChippClient, MockServer) {
         initial_retry_delay: Duration::from_millis(10), // Fast retries for tests
         max_retry_delay: Duration::from_millis(100),
     };
-    let client = ChippClient::new(config);
+    let client = ChippClient::new(config).expect("Failed to create test client");
     (client, mock_server)
 }
 
