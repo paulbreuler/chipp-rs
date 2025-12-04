@@ -273,7 +273,6 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 ## Acknowledgments
 
 - Built for the [Chipp.ai](https://chipp.ai) platform
-- Originally developed as part of the [Chipp Edge Companion](https://github.com/paulbreuler/chipp-edge-companion) project
 
 ## Links
 
