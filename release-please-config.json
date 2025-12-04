@@ -3,8 +3,9 @@
   "packages": {
     ".": {
       "release-type": "rust",
-      "prerelease": true,
+      "versioning-strategy": "prerelease",
       "prerelease-type": "alpha",
+      "prerelease": true,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "changelog-sections": [
