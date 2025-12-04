@@ -1,0 +1,38 @@
+# Release Please workflow
+# https://github.com/googleapis/release-please-action
+#
+# This workflow:
+# 1. Runs on every push to main
+# 2. Analyzes conventional commits since last release
+# 3. Creates/updates a Release PR with version bump and changelog
+# 4. When Release PR is merged, creates a git tag
+# 5. The tag triggers the release.yml workflow to publish to crates.io
+
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          # See: https://github.com/googleapis/release-please/blob/main/docs/customizing.md#rust
+          release-type: rust
+          # Use manifest mode for more control
+          # See: https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
