@@ -90,6 +90,7 @@ jobs:
             TAG="${GITHUB_REF#refs/tags/}"
           fi
           VERSION="${TAG#v}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           # Check if this is a pre-release (contains hyphen like v0.1.0-alpha.1)
           if [[ "$VERSION" == *-* ]]; then
@@ -111,7 +112,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.tag || github.ref_name }}
+          tag_name: ${{ steps.version.outputs.tag }}
           body: ${{ steps.git-cliff.outputs.content }}
           prerelease: ${{ steps.version.outputs.prerelease == 'true' }}
           generate_release_notes: false
