@@ -53,67 +53,90 @@ Validate prerequisites:
 **If validation fails**: Stop and report specific issue with resolution steps
 </step_1_validate_environment>
 
-<step_2_analyze_changes>
-Analyze changes to generate PR metadata:
+<step_2_gather_context>
+Gather all context needed to generate PR title and description:
 
-1. **Determine conventional commit type from changed files**:
-   - `src/lib.rs` API changes → `feat` or `fix`
-   - `examples/` → `docs` or `feat`
-   - `tests/` only → `test`
-   - `*.md` only → `docs`
-   - `Cargo.toml` deps only → `deps`
-   - `.augment/` → `chore`
-   - Branch name prefix overrides (fix/, feat/, docs/)
+1. **Review all commits** (from HEAD back to main):
+   ```bash
+   git log main..HEAD --oneline
+   git log main..HEAD --format="%s%n%b" # full messages with bodies
+   ```
 
-2. **Detect breaking changes**:
+2. **Review changed files**:
+   ```bash
+   git diff main..HEAD --stat
+   git diff main..HEAD --name-only
+   ```
+
+3. **Fetch linked GitHub issue** (if issue number provided or found in branch name):
+   ```bash
+   # Extract issue number from branch name (e.g., fix/issue-3-foo → 3)
+   # Or use provided argument
+   ```
+   Then fetch via GitHub API:
+   - GET `/repos/paulbreuler/chipp-rs/issues/{number}`
+   - Extract: title, body, labels
+
+4. **Detect breaking changes**:
    - Search commit messages for `BREAKING CHANGE:` or `!` suffix
-   - Check for public API signature changes
-   - Flag if found
-
-3. **Find linked issues**:
-   - Parse branch name for issue numbers (e.g., `fix/issue-3-...`)
-   - Search commit messages for `Fixes #`, `Closes #`, `Resolves #`
-   - Use provided `<issue-number>` argument if present
-
-4. **Extract commit messages** for summary generation
-</step_2_analyze_changes>
+   - Check for public API signature changes in diff
+</step_2_gather_context>
 
 <step_3_generate_pr_title>
-**Use the first (oldest) commit message on the branch as the PR title**:
+**Derive title from GitHub issue and commit context**:
 
-```bash
-# Get the first commit message on this branch (the primary change)
-git log main..HEAD --format=%s --reverse | head -1
-```
+1. **If linked to a GitHub issue**: Use the issue title as the basis
+   - Issue #3: "Fix `expect()` panic in `ChippClient::new()` - Return `Result` instead"
+   - Convert to conventional commit: `fix!: ChippClient::new() returns Result instead of panicking`
 
-The `--reverse` flag ensures we get the oldest commit first, which represents the primary change that started this branch.
+2. **If no linked issue**: Summarize the commits into a single title
+   - Review all commit messages
+   - Identify the primary change/theme
+   - Write a conventional commit title that captures the overall PR purpose
 
-**Verify it follows conventional commit format**:
-- `<type>(<scope>): <description>`
-- `<type>!: <description>` for breaking changes
+3. **Determine commit type** from context:
+   - `fix` - bug fixes, error corrections
+   - `feat` - new features, capabilities
+   - `docs` - documentation only
+   - `test` - test additions/changes only
+   - `chore` - tooling, config, maintenance
+   - `refactor` - code restructuring without behavior change
 
-**Examples**:
-- `feat(client): add streaming chat support`
-- `fix(client): return Result from ChippClient::new()`
-- `docs: update README with streaming examples`
-- `feat!: migrate to new authentication flow` (breaking change)
+4. **Add `!` for breaking changes** if detected
+
+**Format**: `<type>[!]: <description>` or `<type>(<scope>)[!]: <description>`
 
 **Rules**:
-
-- Type: lowercase (feat, fix, docs, test, chore, deps)
+- Type: lowercase
 - Scope: optional, lowercase (client, config, streaming)
 - Description: imperative mood, lowercase, no period
-- Add `!` before `:` for breaking changes
 - Max 72 characters total
+
+**Examples**:
+- `fix!: ChippClient::new() returns Result instead of panicking`
+- `feat(streaming): add SSE chunk parsing`
+- `docs: update README with error handling examples`
 </step_3_generate_pr_title>
 
 <step_4_generate_pr_description>
-Generate PR description using this template:
+Generate PR description by synthesizing gathered context:
+
+1. **Summary**: Write based on:
+   - The GitHub issue description (if linked)
+   - The commit messages explaining what was done
+   - The actual file changes
+
+2. **Changes section**: Populate from `git diff --stat` and commit messages
+   - Group into Added/Changed/Fixed/Removed
+
+3. **Testing/Quality sections**: Pre-check boxes based on what was actually verified
+
+**Template**:
 
 ```markdown
 ## Summary
 
-[One-paragraph summary of what this PR does and why]
+[Synthesize from issue description + commits: what this PR does and why]
 
 ## Linked Issues
 
@@ -122,38 +145,38 @@ Closes #[issue-number]
 ## Changes
 
 ### Added
-- [New features]
+- [From commits and diff]
 
 ### Changed
-- [Modified behavior]
+- [From commits and diff]
 
 ### Fixed
-- [Bug fixes]
+- [From commits and diff]
 
 ## Testing
 
-- [ ] Unit tests added/updated
-- [ ] All tests passing (`cargo test`)
-- [ ] Doc tests passing (`cargo test --doc`)
-- [ ] Examples run successfully
+- [x/] Unit tests added/updated
+- [x/] All tests passing (`cargo test`)
+- [x/] Doc tests passing (`cargo test --doc`)
+- [x/] Examples run successfully
 
 ## Quality Checks
 
-- [ ] `cargo fmt --check` passes
-- [ ] `cargo clippy --all-targets -- -D warnings` passes
-- [ ] `cargo doc --no-deps` produces no warnings
-- [ ] `cargo publish --dry-run` succeeds
+- [x/] `cargo fmt --check` passes
+- [x/] `cargo clippy --all-targets -- -D warnings` passes
+- [x/] `cargo doc --no-deps` produces no warnings
+- [x/] `cargo publish --dry-run` succeeds
 
 ## Breaking Changes
 
-[If applicable, describe breaking changes and migration path]
+[If detected, describe changes and migration path with code examples]
 
 ## Checklist
 
-- [ ] Code follows SDK patterns (`.augment/rules/50-rust-sdk-patterns.md`)
-- [ ] No `unwrap()` or `expect()` in library code
-- [ ] Documentation updated
-- [ ] CHANGELOG.md updated (if user-facing change)
+- [x/] Code follows SDK patterns
+- [x/] No `unwrap()` or `expect()` in library code
+- [x/] Documentation updated
+- [x/] CHANGELOG.md updated (if user-facing change)
 ```
 
 </step_4_generate_pr_description>
