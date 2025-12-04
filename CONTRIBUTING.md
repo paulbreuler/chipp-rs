@@ -202,8 +202,12 @@ Fix all clippy warnings before committing. If you believe a warning is a false p
 Verify docs build without warnings:
 
 ```bash
-cargo doc --no-deps
+cargo doc --no-deps --all-features
 ```
+
+Preview locally: `cargo doc --open`
+
+Documentation is automatically built on [docs.rs](https://docs.rs/chipp) when published. See the [docs.rs documentation](https://docs.rs/about) for details.
 
 ### Testing
 
