@@ -23,6 +23,7 @@ Arguments:
 - `--force`: Skip validation checks (use carefully)
 
 Environment:
+
 - BASE_BRANCH: Override default base branch (default: `main`)
 </input>
 
@@ -78,18 +79,27 @@ Analyze changes to generate PR metadata:
 </step_2_analyze_changes>
 
 <step_3_generate_pr_title>
-Generate conventional commit title:
+**Use the first (oldest) commit message on the branch as the PR title**:
 
-**Format**: `<type>(<scope>): <description>`
+```bash
+# Get the first commit message on this branch (the primary change)
+git log main..HEAD --format=%s --reverse | head -1
+```
+
+The `--reverse` flag ensures we get the oldest commit first, which represents the primary change that started this branch.
+
+**Verify it follows conventional commit format**:
+- `<type>(<scope>): <description>`
+- `<type>!: <description>` for breaking changes
 
 **Examples**:
 - `feat(client): add streaming chat support`
 - `fix(client): return Result from ChippClient::new()`
 - `docs: update README with streaming examples`
-- `test: add unit tests for retry logic`
 - `feat!: migrate to new authentication flow` (breaking change)
 
 **Rules**:
+
 - Type: lowercase (feat, fix, docs, test, chore, deps)
 - Scope: optional, lowercase (client, config, streaming)
 - Description: imperative mood, lowercase, no period
@@ -145,6 +155,7 @@ Closes #[issue-number]
 - [ ] Documentation updated
 - [ ] CHANGELOG.md updated (if user-facing change)
 ```
+
 </step_4_generate_pr_description>
 
 <step_5_run_quality_checks>
@@ -163,6 +174,7 @@ Run validation checks (skip if `--force` flag present):
 Push branch and create PR:
 
 1. **Push branch** (if not already on remote):
+
    ```bash
    git push -u origin [branch-name]
    ```
@@ -204,11 +216,13 @@ Next Steps:
   3. Request review if needed
   4. Merge when approved
 ```
+
 </step_7_output_summary>
 
 </process>
 
 <success_criteria>
+
 - PR created successfully on GitHub
 - Title follows conventional commit format
 - Description is comprehensive
@@ -217,4 +231,3 @@ Next Steps:
 - Branch pushed to remote
 - User receives clear summary with PR URL
 </success_criteria>
-
