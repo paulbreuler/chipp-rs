@@ -296,4 +296,121 @@ impl ChippClient {
 
         Ok(full_response)
     }
+
+    /// Check if the Chipp API is reachable and healthy.
+    ///
+    /// This method performs a lightweight HEAD request to the chat completions endpoint
+    /// to verify connectivity without incurring billing costs or consuming rate limits.
+    ///
+    /// # Returns
+    ///
+    /// - `Ok(true)` if the API is reachable and returns a successful status (2xx)
+    /// - `Ok(false)` if the API is reachable but returns an error status (4xx, 5xx)
+    /// - `Err(ChippClientError::HttpError)` if a network error occurs (timeout, DNS failure, etc.)
+    ///
+    /// # Use Case
+    ///
+    /// This is useful for offline-first applications that need to gracefully degrade
+    /// to a local LLM when the Chipp API is unreachable.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use chipp::{ChippClient, ChippConfig};
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let config = ChippConfig::builder()
+    ///     .api_key("YOUR_API_KEY_HERE")
+    ///     .model("myapp-123")
+    ///     .build()?;
+    ///
+    /// let client = ChippClient::new(config)?;
+    ///
+    /// // Check API health before routing request
+    /// if client.is_healthy().await? {
+    ///     println!("API is healthy, routing to Chipp");
+    ///     // Use client.chat() or client.chat_stream()
+    /// } else {
+    ///     println!("API is unhealthy, falling back to local LLM");
+    ///     // Use local LLM instead
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns `ChippClientError::HttpError` if the network request fails due to
+    /// timeout, DNS resolution failure, or other connectivity issues.
+    pub async fn is_healthy(&self) -> Result<bool, ChippClientError> {
+        let url = format!("{}/chat/completions", self.config.base_url);
+
+        // Use HEAD request for minimal overhead
+        let response = self.http.head(&url).send().await?;
+
+        // 2xx status codes indicate healthy API
+        // 4xx/5xx status codes indicate API is reachable but unhealthy
+        Ok(response.status().is_success())
+    }
+
+    /// Measure the round-trip latency to the Chipp API.
+    ///
+    /// This method performs a lightweight HEAD request to the chat completions endpoint
+    /// and measures the time taken for the request to complete.
+    ///
+    /// # Returns
+    ///
+    /// - `Ok(Duration)` containing the round-trip latency if successful
+    /// - `Err(ChippClientError::HttpError)` if a network error occurs
+    ///
+    /// # Use Case
+    ///
+    /// This is useful for monitoring API performance and deciding whether to route
+    /// requests to the Chipp API or fall back to a local LLM based on latency.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use chipp::{ChippClient, ChippConfig};
+    /// use std::time::Duration;
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let config = ChippConfig::builder()
+    ///     .api_key("YOUR_API_KEY_HERE")
+    ///     .model("myapp-123")
+    ///     .build()?;
+    ///
+    /// let client = ChippClient::new(config)?;
+    ///
+    /// // Measure API latency
+    /// let latency = client.ping().await?;
+    /// println!("API latency: {:?}", latency);
+    ///
+    /// if latency < Duration::from_secs(2) {
+    ///     println!("Low latency, using Chipp API");
+    /// } else {
+    ///     println!("High latency, falling back to local LLM");
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns `ChippClientError::HttpError` if the network request fails due to
+    /// timeout, DNS resolution failure, or other connectivity issues.
+    pub async fn ping(&self) -> Result<std::time::Duration, ChippClientError> {
+        let url = format!("{}/chat/completions", self.config.base_url);
+
+        // Start timer
+        let start = std::time::Instant::now();
+
+        // Use HEAD request for minimal overhead
+        let _response = self.http.head(&url).send().await?;
+
+        // Calculate elapsed time
+        let latency = start.elapsed();
+
+        Ok(latency)
+    }
 }
