@@ -64,7 +64,7 @@ Have an idea? Please [open an issue](https://github.com/paulbreuler/chipp-rs/iss
 
 ### Prerequisites
 
-- **Rust 1.83+** (MSRV): Install via [rustup](https://rustup.rs/)
+- **Rust 1.83+** (MSRV): Install via [rustup](https://rustup.rs/) <!-- x-sync-msrv: Cargo.toml rust-version -->
   ```bash
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
   rustup component add rustfmt clippy
@@ -211,7 +211,7 @@ All PRs must pass the same checks as CI. Here's what CI runs:
 | Doc tests | `cargo test --doc` | All doc examples compile |
 | Documentation | `cargo doc --no-deps --all-features` | No doc warnings |
 | Coverage | `cargo llvm-cov` | ≥80% line coverage |
-| MSRV | `cargo check` with Rust 1.83 | Compiles on MSRV |
+| MSRV | `cargo check` with Rust 1.83 | Compiles on MSRV | <!-- x-sync-msrv: Cargo.toml rust-version -->
 | Semver | `cargo semver-checks check-release` | No breaking changes (minor/patch) |
 
 ### Quick Check: Run All Quality Checks
@@ -423,7 +423,7 @@ feat!: change chat() return type to Result
 
 ### Review Process
 
-1. **Automated checks**: All 8 CI checks must pass
+1. **Automated checks**: All CI checks must pass
 2. **Code review**: At least one maintainer approval required
 3. **Documentation**: Verify docs are complete and accurate
 4. **Testing**: Verify tests cover new functionality
