@@ -4,7 +4,6 @@
 [![docs.rs](https://img.shields.io/docsrs/chipp)](https://docs.rs/chipp)
 [![License](https://img.shields.io/crates/l/chipp.svg)](https://github.com/paulbreuler/chipp-rs#license)
 [![CI](https://github.com/paulbreuler/chipp-rs/workflows/CI/badge.svg)](https://github.com/paulbreuler/chipp-rs/actions)
-[![codecov](https://codecov.io/gh/paulbreuler/chipp-rs/branch/main/graph/badge.svg)](https://codecov.io/gh/paulbreuler/chipp-rs)
 [![MSRV](https://img.shields.io/badge/MSRV-1.83-blue)](https://github.com/paulbreuler/chipp-rs)
 [![Downloads](https://img.shields.io/crates/d/chipp.svg)](https://crates.io/crates/chipp)
 
