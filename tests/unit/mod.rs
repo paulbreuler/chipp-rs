@@ -8,5 +8,7 @@
 
 mod chat_tests;
 mod client_new_tests;
+mod config_tests;
 mod security_tests;
 mod streaming_tests;
+mod types_tests;
