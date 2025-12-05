@@ -69,6 +69,15 @@ fn test_parse_stream_chunk_valid_data_extracts_content() { ... }
 - Bug fixes (write test that reproduces bug first)
 - Behavior changes to existing code
 - New error types or error conditions
+- **Security-critical changes** (credential handling, input validation, access control)
+
+### Security Testing Requirements
+
+For security-related changes, tests MUST verify:
+- Secrets are redacted in `Debug` output (`tests/unit/security_tests.rs`)
+- Error messages don't expose sensitive data
+- Input validation prevents injection attacks
+- Authentication/authorization behaves correctly on edge cases
 
 ## Exceptions (No TDD Required)
 
