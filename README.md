@@ -29,7 +29,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-chipp = "0.1.1"
+chipp = "0.1.1" # x-release-please-version
 tokio = { version = "1", features = ["full"] }
 ```
 
