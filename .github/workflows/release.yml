@@ -9,6 +9,13 @@ on:
       tag:
         description: 'Tag to release (e.g., v0.1.0)'
         required: true
+  # Called by release-please workflow after creating a release
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g., v0.1.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write

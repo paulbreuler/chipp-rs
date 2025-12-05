@@ -5,8 +5,7 @@
 # 1. Runs on every push to main
 # 2. Analyzes conventional commits since last release
 # 3. Creates/updates a Release PR with version bump and changelog
-# 4. When Release PR is merged, creates a git tag
-# 5. The tag triggers the release.yml workflow to publish to crates.io
+# 4. When Release PR is merged, creates a git tag and triggers publish
 
 name: Release Please
 
@@ -36,4 +35,15 @@ jobs:
           # See: https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  # Trigger the release workflow when a release is created
+  # This is needed because tags created by GITHUB_TOKEN don't trigger other workflows
+  # See: https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow
+  publish:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.release-please.outputs.tag_name }}
+    secrets: inherit
 
