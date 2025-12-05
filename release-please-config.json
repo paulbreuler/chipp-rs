@@ -15,6 +15,13 @@
         { "type": "test", "section": "Miscellaneous", "hidden": true },
         { "type": "refactor", "section": "Miscellaneous", "hidden": true },
         { "type": "style", "section": "Miscellaneous", "hidden": true }
+      ],
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "README.md",
+          "glob": false
+        }
       ]
     }
   }

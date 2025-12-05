@@ -51,6 +51,10 @@ required-features = []
 name = "session"
 required-features = []
 
+[[example]]
+name = "error_handling"
+required-features = []
+
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
