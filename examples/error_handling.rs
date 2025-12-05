@@ -291,5 +291,6 @@ fn classify_error(error: &ChippClientError) -> &'static str {
         ChippClientError::InvalidResponse(_) => "Invalid Response (NOT retryable)",
         ChippClientError::StreamError(_) => "Stream Error (NOT retryable)",
         ChippClientError::MaxRetriesExceeded(_) => "Max Retries Exceeded",
+        ChippClientError::ConfigError(_) => "Configuration Error (NOT retryable)",
     }
 }

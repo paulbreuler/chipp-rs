@@ -33,30 +33,23 @@ tokio = { version = "1", features = ["full"] }
 ## Quick Start
 
 ```rust
-use chipp::{ChippClient, ChippConfig, ChippMessage, ChippSession, MessageRole};
-use std::time::Duration;
+use chipp::{ChippClient, ChippConfig, ChippMessage, ChippSession};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let config = ChippConfig {
-        api_key: std::env::var("CHIPP_API_KEY")?,
-        base_url: "https://app.chipp.ai/api/v1".to_string(),
-        model: "your-app-name-id".to_string(),
-        timeout: Duration::from_secs(30),
-        max_retries: 3,
-        initial_retry_delay: Duration::from_millis(100),
-        max_retry_delay: Duration::from_secs(10),
-    };
+    // Use the builder pattern for ergonomic configuration
+    let config = ChippConfig::builder()
+        .api_key(std::env::var("CHIPP_API_KEY")?)
+        .model(std::env::var("CHIPP_APP_NAME_ID")?)
+        .build()?;
 
     let client = ChippClient::new(config)?;
     let mut session = ChippSession::new();
 
-    let messages = vec![ChippMessage {
-        role: MessageRole::User,
-        content: "Hello!".to_string(),
-    }];
+    let response = client
+        .chat(&mut session, &[ChippMessage::user("Hello!")])
+        .await?;
 
-    let response = client.chat(&mut session, &messages).await?;
     println!("Response: {}", response);
 
     Ok(())
@@ -146,17 +139,45 @@ cargo run --example error_handling
 
 ## Configuration
 
+### Using the Builder Pattern (Recommended)
+
 ```rust
-pub struct ChippConfig {
-    pub api_key: String,              // Your Chipp API key
-    pub base_url: String,             // Default: "https://app.chipp.ai/api/v1"
-    pub model: String,                // Your appNameId from Chipp dashboard
-    pub timeout: Duration,            // Request timeout (default: 30s)
-    pub max_retries: usize,           // Max retry attempts (default: 3)
-    pub initial_retry_delay: Duration, // Initial backoff delay (default: 100ms)
-    pub max_retry_delay: Duration,    // Max backoff delay (default: 10s)
-}
+use chipp::ChippConfig;
+
+let config = ChippConfig::builder()
+    .api_key("YOUR_API_KEY_HERE")
+    .model("your-app-name-id")
+    .timeout(std::time::Duration::from_secs(60))  // Optional: default is 30s
+    .max_retries(5)                                // Optional: default is 3
+    .build()?;
 ```
+
+### Direct Struct Initialization
+
+```rust
+use chipp::ChippConfig;
+use std::time::Duration;
+
+let config = ChippConfig {
+    api_key: "YOUR_API_KEY_HERE".to_string(),
+    model: "your-app-name-id".to_string(),
+    base_url: "https://app.chipp.ai/api/v1".to_string(),  // Default
+    timeout: Duration::from_secs(30),                      // Default
+    max_retries: 3,                                        // Default
+    initial_retry_delay: Duration::from_millis(100),       // Default
+    max_retry_delay: Duration::from_secs(10),              // Default
+};
+```
+
+**Configuration Options:**
+
+- `api_key` (required): Your Chipp API key from the Share → API tab
+- `model` (required): Your appNameId from the Chipp dashboard
+- `base_url`: API endpoint (default: `https://app.chipp.ai/api/v1`)
+- `timeout`: Request timeout (default: 30 seconds)
+- `max_retries`: Maximum retry attempts for transient failures (default: 3)
+- `initial_retry_delay`: Initial backoff delay (default: 100ms)
+- `max_retry_delay`: Maximum backoff delay (default: 10 seconds)
 
 ## Error Handling
 
@@ -175,16 +196,66 @@ match client.chat(&mut session, &messages).await {
 }
 ```
 
-## Important Notes
+## Security Best Practices
 
-### Streaming Format
+This SDK is designed with security in mind. Follow these best practices to protect your API credentials:
 
-⚠️ **The actual Chipp API streaming format differs from the official documentation!**
+### Never Hardcode API Keys
 
-- **Documentation shows**: Standard SSE with `data:` prefix and OpenAI-compatible JSON chunks
-- **Actual API returns**: Custom format with prefixes like `0:`, `e:`, `d:`, `f:`, `8:`
+```rust
+// ❌ BAD: Hardcoded API key
+let config = ChippConfig::builder()
+    .api_key("live_abc123...")  // NEVER do this!
+    .build()?;
 
-This client handles the actual format automatically - you don't need to worry about the format differences.
+// ✅ GOOD: Load from environment variable
+let config = ChippConfig::builder()
+    .api_key(std::env::var("CHIPP_API_KEY")?)
+    .build()?;
+```
+
+### Use Environment Variables
+
+Store credentials in environment variables, not in source code or config files:
+
+```bash
+# Set in your shell or .env file (which is gitignored)
+export CHIPP_API_KEY="your-api-key"
+export CHIPP_APP_NAME_ID="your-app-id"
+```
+
+### Avoid Logging Configuration Objects
+
+The `ChippConfig` struct implements a custom `Debug` trait that **redacts the API key**:
+
+```rust
+let config = ChippConfig::builder()
+    .api_key("secret-key")
+    .model("my-app")
+    .build()?;
+
+// Safe to log - API key is redacted
+println!("{:?}", config);
+// Output: ChippConfig { api_key: "[REDACTED]", base_url: "...", model: "my-app", ... }
+```
+
+However, avoid logging raw API key strings directly:
+
+```rust
+// ❌ BAD: Logging the raw API key
+let api_key = std::env::var("CHIPP_API_KEY")?;
+tracing::debug!("Using API key: {}", api_key);  // NEVER do this!
+
+// ✅ GOOD: Log without exposing secrets
+tracing::info!("Initializing Chipp client");
+```
+
+### Production Recommendations
+
+- **Use a secrets manager** (AWS Secrets Manager, HashiCorp Vault, etc.) for production deployments
+- **Rotate API keys regularly** and update your environment variables
+- **Audit logs** to ensure no sensitive data is accidentally logged
+- **Use `.gitignore`** to exclude `.env` files from version control
 
 ## Testing
 
