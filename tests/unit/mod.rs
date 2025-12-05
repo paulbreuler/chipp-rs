@@ -7,6 +7,7 @@
 //! - security_tests: Security-critical behavior tests (API key redaction, etc.)
 
 mod chat_tests;
+mod client_health_tests;
 mod client_new_tests;
 mod config_tests;
 mod security_tests;
