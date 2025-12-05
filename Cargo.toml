@@ -28,6 +28,7 @@ backoff = { version = "0.4.0", features = ["tokio"] }
 bytes = "1.11.0"
 
 [dev-dependencies]
+mockito = "1.7.1"
 serde_json = "1.0"
 tokio = { version = "1.48", features = ["full", "test-util"] }
 tokio-test = "0.4"
