@@ -4,6 +4,8 @@ Thank you for your interest in contributing to chipp-rs! This document provides 
 
 ## Table of Contents
 
+- [Code of Conduct](#code-of-conduct)
+- [How to Contribute](#how-to-contribute)
 - [Development Setup](#development-setup)
 - [Pre-Commit Hooks](#pre-commit-hooks)
 - [Code Quality Standards](#code-quality-standards)
@@ -13,13 +15,59 @@ Thank you for your interest in contributing to chipp-rs! This document provides 
 
 ---
 
+## Code of Conduct
+
+We are committed to providing a welcoming and inclusive environment. All contributors are expected to:
+
+- Be respectful and inclusive in language and actions
+- Accept constructive criticism gracefully
+- Focus on what is best for the community and project
+- Show empathy towards other community members
+
+Harassment, trolling, or exclusionary behavior will not be tolerated.
+
+---
+
+## How to Contribute
+
+### Reporting Bugs
+
+Found a bug? Please [open an issue](https://github.com/paulbreuler/chipp-rs/issues/new) with:
+
+- **Clear title**: Brief description of the bug
+- **Environment**: Rust version, OS, chipp version
+- **Steps to reproduce**: Minimal code example if possible
+- **Expected behavior**: What you expected to happen
+- **Actual behavior**: What actually happened
+- **Error messages**: Full error output, stack traces
+
+### Suggesting Features
+
+Have an idea? Please [open an issue](https://github.com/paulbreuler/chipp-rs/issues/new) with:
+
+- **Use case**: What problem does this solve?
+- **Proposed solution**: How should it work?
+- **Alternatives considered**: Other approaches you've thought about
+- **Examples**: API design ideas, code snippets
+
+### Contributing Code
+
+1. Check [existing issues](https://github.com/paulbreuler/chipp-rs/issues) for something to work on
+2. Comment on the issue to let others know you're working on it
+3. Fork the repository and create a feature branch
+4. Follow the [Development Setup](#development-setup) below
+5. Submit a pull request following the [PR Process](#pull-request-process)
+
+---
+
 ## Development Setup
 
 ### Prerequisites
 
-- **Rust**: Install via [rustup](https://rustup.rs/)
+- **Rust 1.83+** (MSRV): Install via [rustup](https://rustup.rs/) <!-- x-sync-msrv: Cargo.toml rust-version -->
   ```bash
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+  rustup component add rustfmt clippy
   ```
 
 - **Just** (optional but recommended): Command runner for common tasks
@@ -29,21 +77,15 @@ Thank you for your interest in contributing to chipp-rs! This document provides 
 
   # Using cargo
   cargo install just
-
-  # Using apt (Ubuntu/Debian)
-  sudo apt install just
   ```
 
-- **Pre-commit** (required): Git hooks for automatic quality checks
+- **Pre-commit** (optional): Git hooks for automatic quality checks
   ```bash
   # Using pip
   pip install pre-commit
 
   # Using Homebrew (macOS)
   brew install pre-commit
-
-  # Using apt (Ubuntu/Debian)
-  sudo apt install pre-commit
   ```
 
 ### Clone and Setup
@@ -51,13 +93,14 @@ Thank you for your interest in contributing to chipp-rs! This document provides 
 ```bash
 # Clone the repository
 git clone https://github.com/paulbreuler/chipp-rs.git
-cd chipp-rs
+cd chipp-rs/chipp-rs
 
 # Install pre-commit hooks (optional)
 pre-commit install
 
-# Verify installation
-pre-commit --version
+# Verify setup
+cargo build
+cargo test
 ```
 
 ### Quick Start with Just
@@ -158,9 +201,20 @@ rustup component add rustfmt clippy
 
 ## Code Quality Standards
 
-### Quick Check: Run All Quality Checks
+All PRs must pass the same checks as CI. Here's what CI runs:
 
-The easiest way to verify your code meets all standards:
+| Check | Command | Requirement |
+|-------|---------|-------------|
+| Formatting | `cargo fmt --all -- --check` | No formatting issues |
+| Linting | `cargo clippy --all-targets --all-features -- -D warnings` | Zero warnings |
+| Tests | `cargo test --verbose` | All tests pass |
+| Doc tests | `cargo test --doc` | All doc examples compile |
+| Documentation | `cargo doc --no-deps --all-features` | No doc warnings |
+| Coverage | `cargo llvm-cov` | ≥80% line coverage |
+| MSRV | `cargo check` with Rust 1.83 | Compiles on MSRV | <!-- x-sync-msrv: Cargo.toml rust-version -->
+| Semver | `cargo semver-checks check-release` | No breaking changes (minor/patch) |
+
+### Quick Check: Run All Quality Checks
 
 ```bash
 # Using just (recommended)
@@ -169,7 +223,8 @@ just quality
 # Or manually
 cargo fmt --all -- --check
 cargo clippy --all-targets --all-features -- -D warnings
-cargo test --lib
+cargo test --verbose
+cargo test --doc
 cargo doc --no-deps --all-features
 ```
 
@@ -207,7 +262,7 @@ cargo doc --no-deps --all-features
 
 Preview locally: `cargo doc --open`
 
-Documentation is automatically built on [docs.rs](https://docs.rs/chipp) when published. See the [docs.rs documentation](https://docs.rs/about) for details.
+Documentation is automatically built on [docs.rs](https://docs.rs/chipp) when published.
 
 ### Testing
 
@@ -295,46 +350,59 @@ After running `just coverage`, open `target/llvm-cov/html/index.html` in your br
 
 ## Pull Request Process
 
+### Branch Naming
+
+Use descriptive branch names with a type prefix:
+
+```
+<type>/issue-<number>-<short-description>
+```
+
+Examples:
+- `feat/issue-26-add-health-check`
+- `fix/issue-15-timeout-handling`
+- `docs/contributing-update`
+
 ### Before Submitting
 
 1. **Run all checks locally**:
    ```bash
+   # Using just (recommended)
+   just quality
+
+   # Or manually
    cargo fmt --all
    cargo clippy --all-targets --all-features -- -D warnings
-   cargo test --lib
-   cargo doc --no-deps
+   cargo test --verbose
+   cargo test --doc
+   cargo doc --no-deps --all-features
    ```
 
 2. **Update documentation**:
    - Add/update doc comments for new/changed APIs
    - Update README.md if adding features
-   - Update CHANGELOG.md (see [Release Process](#release-process))
 
 3. **Add tests**:
    - Unit tests for new functionality
-   - Integration tests for API changes
+   - Integration tests for API changes (feature-gated)
    - Doc tests for examples
-
-### PR Guidelines
-
-- **Title**: Use conventional commit format (e.g., `feat: add retry logic`, `fix: handle timeout errors`)
-- **Description**: Explain what changed and why
-- **Link issues**: Reference related issues (e.g., `Closes #123`)
-- **Keep focused**: One feature/fix per PR
-- **Rebase**: Keep commits clean and rebased on latest main
 
 ### Conventional Commit Format
 
-We use [Conventional Commits](https://www.conventionalcommits.org/):
+We use [Conventional Commits](https://www.conventionalcommits.org/) for all commits and PR titles:
 
-- `feat:` - New feature
-- `fix:` - Bug fix
-- `docs:` - Documentation only
-- `style:` - Formatting, missing semicolons, etc.
-- `refactor:` - Code change that neither fixes a bug nor adds a feature
-- `perf:` - Performance improvement
-- `test:` - Adding or updating tests
-- `chore:` - Maintenance tasks, dependency updates
+| Type | Description |
+|------|-------------|
+| `feat:` | New feature |
+| `fix:` | Bug fix |
+| `docs:` | Documentation only |
+| `style:` | Formatting, whitespace |
+| `refactor:` | Code change (no new feature or fix) |
+| `perf:` | Performance improvement |
+| `test:` | Adding or updating tests |
+| `chore:` | Maintenance, dependencies |
+
+**Breaking changes**: Add `!` after the type (e.g., `feat!: remove deprecated API`)
 
 Examples:
 ```
@@ -342,11 +410,20 @@ feat: add exponential backoff retry logic
 fix: handle partial SSE events in streaming
 docs: add error handling examples
 test: add unit tests for retry behavior
+feat!: change chat() return type to Result
 ```
+
+### PR Guidelines
+
+- **Title**: Use conventional commit format
+- **Description**: Explain what changed and why
+- **Link issues**: Reference related issues (e.g., `Closes #123`)
+- **Keep focused**: One feature/fix per PR
+- **Rebase**: Keep commits clean and rebased on latest main
 
 ### Review Process
 
-1. **Automated checks**: CI must pass (tests, clippy, fmt)
+1. **Automated checks**: All CI checks must pass
 2. **Code review**: At least one maintainer approval required
 3. **Documentation**: Verify docs are complete and accurate
 4. **Testing**: Verify tests cover new functionality
@@ -355,143 +432,60 @@ test: add unit tests for retry behavior
 
 ## Release Process
 
+> **Note**: Releases are automated via [Release Please](https://github.com/googleapis/release-please). Contributors don't need to manage versions or changelogs manually.
+
+### How It Works
+
+1. **Write conventional commits** - Your commit messages determine the version bump:
+   - `feat:` → Minor version bump (0.1.0 → 0.2.0)
+   - `fix:` → Patch version bump (0.1.0 → 0.1.1)
+   - `feat!:` or `fix!:` → Major version bump (0.1.0 → 1.0.0)
+
+2. **Merge to main** - When PRs are merged, Release Please:
+   - Analyzes conventional commits since last release
+   - Creates/updates a Release PR with version bump and changelog
+
+3. **Merge Release PR** - When maintainers merge the Release PR:
+   - Git tag is created automatically
+   - GitHub Release is published
+   - Crate is published to crates.io via CI
+
 ### Versioning
 
 We follow [Semantic Versioning](https://semver.org/):
 
-- **MAJOR** (1.0.0): Breaking changes
-- **MINOR** (0.1.0): New features, backward compatible
-- **PATCH** (0.0.1): Bug fixes, backward compatible
+| Version | When to use | Example commits |
+|---------|-------------|-----------------|
+| **MAJOR** (1.0.0) | Breaking changes | `feat!: remove deprecated API` |
+| **MINOR** (0.2.0) | New features | `feat: add health check methods` |
+| **PATCH** (0.1.1) | Bug fixes | `fix: handle timeout correctly` |
 
-### Automated CHANGELOG Generation
+### Manual Changelog (git-cliff)
 
-We use [git-cliff](https://git-cliff.org/) to automatically generate `CHANGELOG.md` from conventional commit messages.
-
-**Why automated?**
-- Ensures consistency across releases
-- Reduces manual work and human error
-- Automatically categorizes changes by type (feat, fix, docs, etc.)
-- Generates links to commits and PRs
-- Follows [Keep a Changelog](https://keepachangelog.com/) format
-
-**How it works:**
-1. Write conventional commit messages (see [Conventional Commits](#conventional-commits) above)
-2. When ready to release, run `git-cliff` to generate/update CHANGELOG.md
-3. The tool parses all commits since the last release
-4. Categorizes them by type (Features, Bug Fixes, Documentation, etc.)
-5. Generates a formatted CHANGELOG.md entry
-
-**Installation:**
+For local previews or manual changelog generation, we also support [git-cliff](https://git-cliff.org/):
 
 ```bash
-# Using cargo
-cargo install git-cliff
-
-# Using Homebrew (macOS)
-brew install git-cliff
-
-# Using apt (Ubuntu/Debian)
-sudo apt install git-cliff
-```
-
-**Usage:**
-
-```bash
-# Generate changelog for unreleased changes
-git-cliff --unreleased --tag v0.2.0 --prepend CHANGELOG.md
+# Preview unreleased changes
+git-cliff --unreleased
 
 # Generate full changelog
 git-cliff --output CHANGELOG.md
-
-# Preview without writing
-git-cliff --unreleased
 ```
 
-**Configuration:**
-
-The repository includes a `cliff.toml` configuration file that defines:
-- Commit parsing rules
-- Changelog template
-- Section ordering
-- Commit filtering
-
-See [git-cliff documentation](https://git-cliff.org/docs) for customization options.
-
-**CHANGELOG Format:**
-
-All changes are documented in `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com/) format:
-
-```markdown
-## [Unreleased]
-
-### Added
-- New feature description
-
-### Changed
-- Changed behavior description
-
-### Fixed
-- Bug fix description
-
-### Deprecated
-- Deprecated feature description
-
-### Removed
-- Removed feature description
-
-### Security
-- Security fix description
-```
-
-### Pre-Release Checklist
-
-Before releasing a new version:
-
-- [ ] All tests pass (`just quality`)
-- [ ] Version bumped in `Cargo.toml`
-- [ ] CHANGELOG.md generated with `git-cliff`
-- [ ] CHANGELOG.md reviewed for accuracy
-- [ ] Documentation reviewed
-- [ ] Examples tested
-- [ ] `cargo publish --dry-run` succeeds
-
-**Release Steps:**
-
-1. **Update version** in `Cargo.toml`
-2. **Generate CHANGELOG**:
-   ```bash
-   git-cliff --unreleased --tag v0.2.0 --prepend CHANGELOG.md
-   ```
-3. **Review CHANGELOG.md** - ensure it looks correct
-4. **Run quality checks**: `just quality`
-5. **Commit changes**:
-   ```bash
-   git add Cargo.toml CHANGELOG.md
-   git commit -m "chore: release v0.2.0"
-   ```
-6. **Tag the release**: `git tag v0.2.0`
-7. **Push**: `git push && git push --tags`
-8. **Publish**: `cargo publish`
-
-See `.augment/rules/10-library-publishing.md` for detailed publishing standards.
+The repository includes a `cliff.toml` configuration file for changelog formatting.
 
 ---
 
 ## Getting Help
 
-- **Issues**: Open an issue for bugs or feature requests
-- **Discussions**: Use GitHub Discussions for questions
+- **Issues**: [Open an issue](https://github.com/paulbreuler/chipp-rs/issues/new) for bugs or feature requests
 - **Documentation**: See [README.md](README.md) and [docs.rs/chipp](https://docs.rs/chipp)
-
----
-
-## Code of Conduct
-
-Be respectful, inclusive, and professional. We're all here to build great software together.
 
 ---
 
 ## License
 
 By contributing, you agree that your contributions will be licensed under the same license as the project (MIT OR Apache-2.0).
+
+This is a standard open-source licensing practice. You retain copyright to your contributions while granting the project permission to use them.
 
