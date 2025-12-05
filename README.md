@@ -4,6 +4,7 @@
 [![docs.rs](https://img.shields.io/docsrs/chipp)](https://docs.rs/chipp)
 [![License](https://img.shields.io/crates/l/chipp.svg)](https://github.com/paulbreuler/chipp-rs#license)
 [![CI](https://github.com/paulbreuler/chipp-rs/workflows/CI/badge.svg)](https://github.com/paulbreuler/chipp-rs/actions)
+[![codecov](https://codecov.io/gh/paulbreuler/chipp-rs/branch/main/graph/badge.svg)](https://codecov.io/gh/paulbreuler/chipp-rs)
 [![MSRV](https://img.shields.io/badge/MSRV-1.83-blue)](https://github.com/paulbreuler/chipp-rs)
 [![Downloads](https://img.shields.io/crates/d/chipp.svg)](https://crates.io/crates/chipp)
 
@@ -13,12 +14,14 @@ Rust client for the [Chipp.ai](https://chipp.ai) API - OpenAI-compatible chat co
 
 - ✅ **Non-streaming chat**: Simple request/response with `chat()`
 - ✅ **Streaming chat**: Real-time text streaming with `chat_stream()`
+- ✅ **Health checks**: API connectivity testing with `is_healthy()` and `ping()`
 - ✅ **Session management**: Automatic `chatSessionId` tracking for conversation continuity
+- ✅ **Automatic retries**: Exponential backoff for transient failures
 - ✅ **Configurable timeouts**: Per-request timeout configuration
 - ✅ **Correlation IDs**: Automatic UUID generation for request tracing
 - ✅ **Comprehensive error handling**: Typed errors with context
 - ✅ **Full async/await**: Built on `tokio` and `reqwest`
-- ✅ **Production-ready**: Comprehensive tests and documentation
+- ✅ **Security-first**: API keys redacted from Debug output
 
 ## Installation
 
@@ -26,8 +29,14 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-chipp = "0.1"
+chipp = "0.1.1"
 tokio = { version = "1", features = ["full"] }
+```
+
+Or install via cargo:
+
+```bash
+cargo add chipp tokio --features tokio/full
 ```
 
 ## Quick Start
@@ -97,19 +106,35 @@ The client automatically manages `chatSessionId` for conversation continuity:
 
 ```rust
 // First message
-let messages1 = vec![ChippMessage {
-    role: MessageRole::User,
-    content: "Remember this number: 42".to_string(),
-}];
+let messages1 = vec![ChippMessage::user("Remember this number: 42")];
 client.chat(&mut session, &messages1).await?;
 
 // Second message (remembers context)
-let messages2 = vec![ChippMessage {
-    role: MessageRole::User,
-    content: "What number did I tell you?".to_string(),
-}];
+let messages2 = vec![ChippMessage::user("What number did I tell you?")];
 let response = client.chat(&mut session, &messages2).await?;
 // Response will mention "42"
+```
+
+### Health Checks (Offline-First Apps)
+
+Check API connectivity before routing requests:
+
+```rust
+use std::time::Duration;
+
+// Check if API is reachable
+if client.is_healthy().await? {
+    // Route to Chipp API
+    let response = client.chat(&mut session, &messages).await?;
+} else {
+    // Fall back to local LLM
+}
+
+// Measure API latency
+let latency = client.ping().await?;
+if latency < Duration::from_secs(2) {
+    println!("Low latency: {:?}", latency);
+}
 ```
 
 ## Running Examples
@@ -348,4 +373,6 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 ## Links
 
 - [Chipp.ai](https://chipp.ai) - Official website
-- [Chipp API Documentation](https://chipp.ai/docs/api) - API reference
+- [API Documentation (docs.rs)](https://docs.rs/chipp) - Full Rust API reference
+- [Crates.io](https://crates.io/crates/chipp) - Package registry
+- [GitHub Repository](https://github.com/paulbreuler/chipp-rs) - Source code and issues
