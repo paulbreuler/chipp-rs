@@ -13,7 +13,7 @@ Rust client for the [Chipp.ai](https://chipp.ai) API - OpenAI-compatible chat co
 
 - ✅ **Non-streaming chat**: Simple request/response with `chat()`
 - ✅ **Streaming chat**: Real-time text streaming with `chat_stream()`
-- ✅ **Health checks**: API connectivity testing with `is_healthy()` and `ping()`
+- ✅ **Latency measurement**: API connectivity testing with `ping()`
 - ✅ **Session management**: Automatic `chatSessionId` tracking for conversation continuity
 - ✅ **Automatic retries**: Exponential backoff for transient failures
 - ✅ **Configurable timeouts**: Per-request timeout configuration
@@ -114,20 +114,12 @@ let response = client.chat(&mut session, &messages2).await?;
 // Response will mention "42"
 ```
 
-### Health Checks (Offline-First Apps)
+### Latency Measurement
 
-Check API connectivity before routing requests:
+Measure API latency for performance monitoring:
 
 ```rust
 use std::time::Duration;
-
-// Check if API is reachable
-if client.is_healthy().await? {
-    // Route to Chipp API
-    let response = client.chat(&mut session, &messages).await?;
-} else {
-    // Fall back to local LLM
-}
 
 // Measure API latency
 let latency = client.ping().await?;
@@ -135,6 +127,36 @@ if latency < Duration::from_secs(2) {
     println!("Low latency: {:?}", latency);
 }
 ```
+
+### Token Usage Tracking
+
+Use `chat_detailed()` to get token counts for rate limiting:
+
+```rust
+use chipp::{ChippClient, ChippConfig, ChippMessage, ChippSession};
+
+let client = ChippClient::new(config)?;
+let mut session = ChippSession::new();
+
+let response = client
+    .chat_detailed(&mut session, &[ChippMessage::user("Hello!")])
+    .await?;
+
+println!("Response: {}", response.content());
+println!("Prompt tokens: {}", response.usage().prompt_tokens);
+println!("Completion tokens: {}", response.usage().completion_tokens);
+println!("Total tokens: {}", response.usage().total_tokens);
+```
+
+`ChatResponse` accessors:
+
+- `content()` - Response text
+- `usage()` - Token counts
+- `session_id()` - Chat session ID
+- `completion_id()` - Completion ID for debugging
+- `created_at()` - Unix timestamp
+- `finish_reason()` - Why completion stopped
+- `model()` - Model/app ID
 
 ## Running Examples
 
