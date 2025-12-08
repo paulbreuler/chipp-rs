@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0](https://github.com/paulbreuler/chipp-rs/compare/v0.2.0...v0.3.0) (2025-12-08)
+
+
+### Features
+
+* add token usage tracking and chat_detailed() method ([#34](https://github.com/paulbreuler/chipp-rs/issues/34)) ([f65bcdf](https://github.com/paulbreuler/chipp-rs/commit/f65bcdf7742e858fa0069edf2189be285131334a))
+
+
+### Bug Fixes
+
+* auto-publish to crates.io when release is created ([394bd9d](https://github.com/paulbreuler/chipp-rs/commit/394bd9da27c3e002f4636a6e9f7d42cb1814dc05))
+
 ## [0.2.0](https://github.com/paulbreuler/chipp-rs/compare/v0.1.1...v0.2.0) (2025-12-05)
 
 
