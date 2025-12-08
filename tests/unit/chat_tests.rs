@@ -1,12 +1,16 @@
-//! Unit tests for ChippClient::chat() method
+//! Unit tests for ChippClient::chat() and chat_detailed() methods
 //!
 //! These tests verify the chat functionality including:
 //! - Successful API calls
 //! - Retry logic with exponential backoff
 //! - Error handling for various failure modes
 //! - Session management
+//! - Token usage tracking (chat_detailed)
 
-use chipp::{ChippClient, ChippClientError, ChippConfig, ChippMessage, ChippSession, MessageRole};
+use chipp::{
+    ChatResponse, ChippClient, ChippClientError, ChippConfig, ChippMessage, ChippSession,
+    MessageRole, Usage,
+};
 use serde_json::json;
 use std::time::Duration;
 use wiremock::matchers::{header, method, path};
@@ -36,16 +40,40 @@ fn create_test_messages() -> Vec<ChippMessage> {
     }]
 }
 
-/// Helper to create successful API response
-fn create_success_response(content: &str, session_id: &str) -> serde_json::Value {
+/// Helper to create successful API response with all fields
+/// This matches the real Chipp API response structure
+fn create_full_response(
+    content: &str,
+    session_id: &str,
+    completion_id: &str,
+    prompt_tokens: u32,
+    completion_tokens: u32,
+) -> serde_json::Value {
     json!({
         "chatSessionId": session_id,
+        "id": completion_id,
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "test-model",
         "choices": [{
+            "index": 0,
             "message": {
+                "role": "assistant",
                 "content": content
-            }
-        }]
+            },
+            "finish_reason": "stop"
+        }],
+        "usage": {
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": prompt_tokens + completion_tokens
+        }
     })
+}
+
+/// Helper to create successful API response (backward compatible helper)
+fn create_success_response(content: &str, session_id: &str) -> serde_json::Value {
+    create_full_response(content, session_id, "chatcmpl-test123", 10, 5)
 }
 
 /// Tests that chat() succeeds on first attempt with valid API response
@@ -320,11 +348,21 @@ async fn test_chat_no_choices_returns_error() {
     // Arrange
     let (client, mock_server) = setup_test_client().await;
 
+    // Response with all required fields but empty choices array
     Mock::given(method("POST"))
         .and(path("/chat/completions"))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({
             "chatSessionId": "session-123",
-            "choices": []
+            "id": "chatcmpl-empty",
+            "object": "chat.completion",
+            "created": 1234567890,
+            "model": "test-model",
+            "choices": [],
+            "usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 0,
+                "total_tokens": 10
+            }
         })))
         .mount(&mock_server)
         .await;
@@ -339,7 +377,11 @@ async fn test_chat_no_choices_returns_error() {
     assert!(result.is_err(), "Expected Err, got: {:?}", result);
     match result.unwrap_err() {
         ChippClientError::InvalidResponse(msg) => {
-            assert!(msg.contains("No choices"));
+            assert!(
+                msg.contains("No choices"),
+                "Expected 'No choices' in error, got: {}",
+                msg
+            );
         }
         other => panic!("Expected InvalidResponse, got: {:?}", other),
     }
@@ -385,4 +427,187 @@ async fn test_chat_missing_content_returns_error() {
         }
         other => panic!("Expected InvalidResponse, got: {:?}", other),
     }
+}
+
+// =============================================================================
+// chat_detailed() Tests - Token Usage and Full Response
+// =============================================================================
+
+/// Tests that chat_detailed() returns full response with token usage
+///
+/// Arrange: Mock server returns successful response with usage data
+/// Act: Call chat_detailed() with test message
+/// Assert: Returns ChatResponse with all fields populated
+#[tokio::test]
+async fn test_chat_detailed_returns_full_response() {
+    // Arrange
+    let (client, mock_server) = setup_test_client().await;
+
+    Mock::given(method("POST"))
+        .and(path("/chat/completions"))
+        .and(header("Authorization", "Bearer test-api-key"))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(create_full_response(
+                "Hello! I'm here to help.",
+                "session-abc",
+                "chatcmpl-xyz789",
+                100,
+                25,
+            )),
+        )
+        .mount(&mock_server)
+        .await;
+
+    let mut session = ChippSession::new();
+    let messages = create_test_messages();
+
+    // Act
+    let result = client.chat_detailed(&mut session, &messages).await;
+
+    // Assert
+    assert!(result.is_ok(), "Expected Ok, got: {:?}", result);
+    let response: ChatResponse = result.unwrap();
+
+    // Verify content
+    assert_eq!(response.content(), "Hello! I'm here to help.");
+
+    // Verify session management
+    assert_eq!(response.session_id(), "session-abc");
+    assert_eq!(session.chat_session_id, Some("session-abc".to_string()));
+
+    // Verify token usage
+    assert_eq!(response.usage().prompt_tokens, 100);
+    assert_eq!(response.usage().completion_tokens, 25);
+    assert_eq!(response.usage().total_tokens, 125);
+
+    // Verify metadata
+    assert_eq!(response.completion_id(), "chatcmpl-xyz789");
+    assert_eq!(response.created_at(), 1234567890);
+    assert_eq!(response.finish_reason(), "stop");
+    assert_eq!(response.model(), "test-model");
+}
+
+/// Tests that chat_detailed() tracks token usage for monitoring
+///
+/// Arrange: Mock server returns response with specific token counts
+/// Act: Call chat_detailed()
+/// Assert: Token counts are correctly captured
+#[tokio::test]
+async fn test_chat_detailed_token_usage_tracking() {
+    // Arrange
+    let (client, mock_server) = setup_test_client().await;
+
+    Mock::given(method("POST"))
+        .and(path("/chat/completions"))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(create_full_response(
+                "Response text",
+                "session-123",
+                "chatcmpl-abc",
+                8751,
+                62,
+            )),
+        )
+        .mount(&mock_server)
+        .await;
+
+    let mut session = ChippSession::new();
+    let messages = create_test_messages();
+
+    // Act
+    let response = client
+        .chat_detailed(&mut session, &messages)
+        .await
+        .expect("Should succeed");
+
+    // Assert
+    let usage: &Usage = response.usage();
+    assert_eq!(usage.prompt_tokens, 8751);
+    assert_eq!(usage.completion_tokens, 62);
+    assert_eq!(usage.total_tokens, 8813);
+}
+
+/// Tests that chat_detailed() retries on transient failures
+///
+/// Arrange: Mock server fails once with 500, then succeeds
+/// Act: Call chat_detailed() with test message
+/// Assert: Returns success after retry with full response
+#[tokio::test]
+async fn test_chat_detailed_retries_on_failure() {
+    // Arrange
+    let (client, mock_server) = setup_test_client().await;
+
+    // First attempt fails with 500
+    Mock::given(method("POST"))
+        .and(path("/chat/completions"))
+        .respond_with(ResponseTemplate::new(500).set_body_string("Internal Server Error"))
+        .up_to_n_times(1)
+        .mount(&mock_server)
+        .await;
+
+    // Second attempt succeeds
+    Mock::given(method("POST"))
+        .and(path("/chat/completions"))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(create_full_response(
+                "Success after retry!",
+                "session-retry",
+                "chatcmpl-retry456",
+                50,
+                10,
+            )),
+        )
+        .mount(&mock_server)
+        .await;
+
+    let mut session = ChippSession::new();
+    let messages = create_test_messages();
+
+    // Act
+    let result = client.chat_detailed(&mut session, &messages).await;
+
+    // Assert
+    assert!(result.is_ok(), "Expected Ok after retry, got: {:?}", result);
+    let response = result.unwrap();
+    assert_eq!(response.content(), "Success after retry!");
+    assert_eq!(response.usage().total_tokens, 60);
+}
+
+/// Tests that chat() still works and returns just content (backward compatibility)
+///
+/// Arrange: Mock server returns full response
+/// Act: Call chat() (not chat_detailed())
+/// Assert: Returns just the content string, not full response
+#[tokio::test]
+async fn test_chat_backward_compatibility() {
+    // Arrange
+    let (client, mock_server) = setup_test_client().await;
+
+    Mock::given(method("POST"))
+        .and(path("/chat/completions"))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(create_full_response(
+                "Simple response",
+                "session-compat",
+                "chatcmpl-compat",
+                20,
+                5,
+            )),
+        )
+        .mount(&mock_server)
+        .await;
+
+    let mut session = ChippSession::new();
+    let messages = create_test_messages();
+
+    // Act - using chat() not chat_detailed()
+    let result = client.chat(&mut session, &messages).await;
+
+    // Assert - returns String, not ChatResponse
+    assert!(result.is_ok());
+    let content: String = result.unwrap();
+    assert_eq!(content, "Simple response");
+
+    // Session should still be updated
+    assert_eq!(session.chat_session_id, Some("session-compat".to_string()));
 }

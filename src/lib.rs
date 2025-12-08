@@ -74,4 +74,4 @@ pub use client::ChippClient;
 pub use config::{ChippConfig, ChippConfigBuilder};
 pub use error::{ChippClientError, Result};
 pub use stream::ChippStream;
-pub use types::{ChippMessage, ChippSession, MessageRole};
+pub use types::{ChatResponse, ChippMessage, ChippSession, MessageRole, Usage};

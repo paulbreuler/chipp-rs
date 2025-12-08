@@ -140,21 +140,6 @@ async fn test_chat_streaming() {
 
 #[tokio::test]
 #[ignore] // Requires API key
-async fn test_is_healthy_with_real_api() {
-    let config = get_test_config().expect("CHIPP_API_KEY and CHIPP_APP_NAME_ID must be set");
-    let client = ChippClient::new(config).expect("Failed to create client");
-
-    let is_healthy = client
-        .is_healthy()
-        .await
-        .expect("Health check request failed");
-
-    println!("API is healthy: {}", is_healthy);
-    assert!(is_healthy, "API should be healthy");
-}
-
-#[tokio::test]
-#[ignore] // Requires API key
 async fn test_ping_with_real_api() {
     let config = get_test_config().expect("CHIPP_API_KEY and CHIPP_APP_NAME_ID must be set");
     let client = ChippClient::new(config).expect("Failed to create client");

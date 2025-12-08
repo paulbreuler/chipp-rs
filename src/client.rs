@@ -3,7 +3,9 @@
 use crate::config::ChippConfig;
 use crate::error::ChippClientError;
 use crate::stream::ChippStream;
-use crate::types::{ChatCompletionRequest, ChatCompletionResponse, ChippMessage, ChippSession};
+use crate::types::{
+    ChatCompletionRequest, ChatCompletionResponse, ChatResponse, ChippMessage, ChippSession,
+};
 
 use backoff::backoff::Backoff;
 use backoff::ExponentialBackoffBuilder;
@@ -71,6 +73,9 @@ impl ChippClient {
 
     /// Send a chat completion request (non-streaming).
     ///
+    /// This is a convenience method that returns just the response content as a string.
+    /// For access to token usage and other metadata, use [`chat_detailed()`](Self::chat_detailed).
+    ///
     /// # Arguments
     ///
     /// * `session` - Session to track conversation state (updates `chatSessionId`)
@@ -83,12 +88,77 @@ impl ChippClient {
     /// # Errors
     ///
     /// Returns error if HTTP request fails, API returns error, or response parsing fails.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use chipp::{ChippClient, ChippConfig, ChippSession, ChippMessage};
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let config = ChippConfig::default();
+    /// # let client = ChippClient::new(config)?;
+    /// let mut session = ChippSession::new();
+    /// let response = client.chat(&mut session, &[ChippMessage::user("Hello!")]).await?;
+    /// println!("Response: {}", response);
+    /// # Ok(())
+    /// # }
+    /// ```
     #[tracing::instrument(skip(self, session, messages), fields(correlation_id))]
     pub async fn chat(
         &self,
         session: &mut ChippSession,
         messages: &[ChippMessage],
     ) -> Result<String, ChippClientError> {
+        let response = self.chat_detailed(session, messages).await?;
+        Ok(response.content().to_string())
+    }
+
+    /// Send a chat completion request and return the full response with metadata.
+    ///
+    /// This method returns a [`ChatResponse`] containing:
+    /// - The AI's response content
+    /// - Token usage information for rate limiting and monitoring
+    /// - Completion ID for debugging
+    /// - Timestamps and finish reason
+    ///
+    /// For simple use cases where you only need the response text,
+    /// use [`chat()`](Self::chat) instead.
+    ///
+    /// # Arguments
+    ///
+    /// * `session` - Session to track conversation state (updates `chatSessionId`)
+    /// * `messages` - Messages in the conversation
+    ///
+    /// # Returns
+    ///
+    /// A [`ChatResponse`] containing the response and metadata.
+    ///
+    /// # Errors
+    ///
+    /// Returns error if HTTP request fails, API returns error, or response parsing fails.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use chipp::{ChippClient, ChippConfig, ChippSession, ChippMessage};
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let config = ChippConfig::default();
+    /// # let client = ChippClient::new(config)?;
+    /// let mut session = ChippSession::new();
+    /// let response = client.chat_detailed(&mut session, &[ChippMessage::user("Hello!")]).await?;
+    ///
+    /// println!("Response: {}", response.content());
+    /// println!("Tokens used: {}", response.usage().total_tokens);
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[tracing::instrument(skip(self, session, messages), fields(correlation_id))]
+    pub async fn chat_detailed(
+        &self,
+        session: &mut ChippSession,
+        messages: &[ChippMessage],
+    ) -> Result<ChatResponse, ChippClientError> {
         let correlation_id = Uuid::new_v4().to_string();
         tracing::Span::current().record("correlation_id", &correlation_id);
 
@@ -101,7 +171,7 @@ impl ChippClient {
             let result = self.chat_attempt(session, messages, &correlation_id).await;
 
             match result {
-                Ok(content) => return Ok(content),
+                Ok(response) => return Ok(response),
                 Err(e) if attempt >= max_attempts => {
                     tracing::warn!(attempt, error = %e, "Max retry attempts exceeded");
                     return Err(ChippClientError::MaxRetriesExceeded(
@@ -125,12 +195,14 @@ impl ChippClient {
     }
 
     /// Internal method for a single chat attempt.
+    ///
+    /// Returns a `ChatResponse` with all metadata from the API.
     async fn chat_attempt(
         &self,
         session: &mut ChippSession,
         messages: &[ChippMessage],
         correlation_id: &str,
-    ) -> Result<String, ChippClientError> {
+    ) -> Result<ChatResponse, ChippClientError> {
         let request_body = ChatCompletionRequest {
             model: self.config.model.clone(),
             messages: messages.to_vec(),
@@ -163,13 +235,18 @@ impl ChippClient {
             ChippClientError::InvalidResponse(format!("Failed to parse response: {}", e))
         })?;
 
-        session.chat_session_id = Some(response_body.chat_session_id);
+        // Validate we have at least one choice before converting
+        if response_body.choices.is_empty() {
+            return Err(ChippClientError::InvalidResponse(
+                "No choices in response".to_string(),
+            ));
+        }
 
-        response_body
-            .choices
-            .first()
-            .map(|c| c.message.content.clone())
-            .ok_or_else(|| ChippClientError::InvalidResponse("No choices in response".to_string()))
+        // Update session with the new session ID
+        session.chat_session_id = Some(response_body.chat_session_id.clone());
+
+        // Convert internal response to public type
+        Ok(response_body.into())
     }
 
     /// Send a streaming chat completion request (SSE).
@@ -295,62 +372,6 @@ impl ChippClient {
         }
 
         Ok(full_response)
-    }
-
-    /// Check if the Chipp API is reachable and healthy.
-    ///
-    /// This method performs a lightweight HEAD request to the chat completions endpoint
-    /// to verify connectivity without incurring billing costs or consuming rate limits.
-    ///
-    /// # Returns
-    ///
-    /// - `Ok(true)` if the API is reachable and returns a successful status (2xx)
-    /// - `Ok(false)` if the API is reachable but returns an error status (4xx, 5xx)
-    /// - `Err(ChippClientError::HttpError)` if a network error occurs (timeout, DNS failure, etc.)
-    ///
-    /// # Use Case
-    ///
-    /// This is useful for offline-first applications that need to gracefully degrade
-    /// to a local LLM when the Chipp API is unreachable.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use chipp::{ChippClient, ChippConfig};
-    ///
-    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    /// let config = ChippConfig::builder()
-    ///     .api_key("YOUR_API_KEY_HERE")
-    ///     .model("myapp-123")
-    ///     .build()?;
-    ///
-    /// let client = ChippClient::new(config)?;
-    ///
-    /// // Check API health before routing request
-    /// if client.is_healthy().await? {
-    ///     println!("API is healthy, routing to Chipp");
-    ///     // Use client.chat() or client.chat_stream()
-    /// } else {
-    ///     println!("API is unhealthy, falling back to local LLM");
-    ///     // Use local LLM instead
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns `ChippClientError::HttpError` if the network request fails due to
-    /// timeout, DNS resolution failure, or other connectivity issues.
-    pub async fn is_healthy(&self) -> Result<bool, ChippClientError> {
-        let url = format!("{}/chat/completions", self.config.base_url);
-
-        // Use HEAD request for minimal overhead
-        let response = self.http.head(&url).send().await?;
-
-        // 2xx status codes indicate healthy API
-        // 4xx/5xx status codes indicate API is reachable but unhealthy
-        Ok(response.status().is_success())
     }
 
     /// Measure the round-trip latency to the Chipp API.
